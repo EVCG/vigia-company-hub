@@ -1,3 +1,4 @@
+
 import { User, Company } from '../types/types';
 
 // Função para gerar um ID único
@@ -45,17 +46,89 @@ const registerUser = (user: Omit<User, 'id' | 'createdAt'>): boolean => {
       return false;
     }
 
+    // Se temos informações da empresa, vamos criar/verificar a empresa primeiro
+    let companyId = "";
+    if (user.companyName && user.cnpj) {
+      companyId = registerCompany({
+        name: user.companyName,
+        cnpj: user.cnpj
+      });
+      
+      if (!companyId) return false;
+    }
+
     const newUser: User = {
       id: generateId(),
       ...user,
+      companyId: companyId, // Usar o ID da empresa criada ou vazia se não houver
       password: user.password || 'padrao123', // Senha padrão
       createdAt: new Date()
     };
     users.push(newUser);
     saveToLocalStorage('users', users);
+    
+    // Se for o primeiro login, definir como usuário atual
+    if (users.length === 1) {
+      setCurrentUser(newUser);
+    }
     return true;
   } catch (error) {
     console.error('Erro ao registrar usuário:', error);
+    return false;
+  }
+};
+
+// Função para registrar uma empresa
+const registerCompany = (companyData: { name: string; cnpj: string }): string => {
+  try {
+    const companies = getCompanies();
+    
+    // Verificar se o CNPJ já está cadastrado
+    const existingCompany = companies.find(c => c.cnpj === companyData.cnpj);
+    if (existingCompany) {
+      return existingCompany.id; // Retorna o ID da empresa existente
+    }
+    
+    // Criar nova empresa
+    const newCompany: Company = {
+      id: generateId(),
+      name: companyData.name,
+      cnpj: companyData.cnpj,
+      createdAt: new Date()
+    };
+    
+    companies.push(newCompany);
+    saveToLocalStorage('companies', companies);
+    
+    return newCompany.id;
+  } catch (error) {
+    console.error('Erro ao registrar empresa:', error);
+    return "";
+  }
+};
+
+// Função para atualizar senha
+const updatePassword = (userId: string, newPassword: string): boolean => {
+  try {
+    const users = getUsers();
+    const userIndex = users.findIndex(u => u.id === userId);
+    
+    if (userIndex === -1) return false;
+    
+    users[userIndex].password = newPassword;
+    users[userIndex].temporaryPassword = false; // Marca como senha permanente
+    
+    saveToLocalStorage('users', users);
+    
+    // Atualizar o usuário atual se necessário
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser(users[userIndex]);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Erro ao atualizar senha:', error);
     return false;
   }
 };
@@ -64,7 +137,13 @@ const registerUser = (user: Omit<User, 'id' | 'createdAt'>): boolean => {
 const login = (email: string, password: string): User | null => {
   const users = getUsers();
   const user = users.find(user => user.email === email && user.password === password);
-  return user || null;
+  
+  if (user) {
+    // Salvar o usuário atual no localStorage
+    setCurrentUser(user);
+  }
+  
+  return user;
 };
 
 // Função para fazer logout (simplesmente remove o usuário do localStorage)
@@ -101,6 +180,13 @@ const updateUser = (userId: string, userData: Partial<User>): boolean => {
     
     // Salvar alterações
     localStorage.setItem('users', JSON.stringify(users));
+    
+    // Atualizar o usuário atual se necessário
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser(users[userIndex]);
+    }
+    
     return true;
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);
@@ -130,6 +216,7 @@ const deleteUser = (userId: string): boolean => {
 
 export const authService = {
   registerUser,
+  registerCompany,
   login,
   logout,
   getCurrentUser,
@@ -137,4 +224,5 @@ export const authService = {
   getUsersByCompany,
   updateUser,
   deleteUser,
+  updatePassword
 };

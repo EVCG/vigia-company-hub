@@ -11,6 +11,7 @@ interface FormattedInputProps {
   required?: boolean;
   id?: string;
   disabled?: boolean;
+  label?: string;
 }
 
 const FormattedInput: React.FC<FormattedInputProps> = ({
@@ -21,7 +22,8 @@ const FormattedInput: React.FC<FormattedInputProps> = ({
   className,
   required,
   id,
-  disabled
+  disabled,
+  label
 }) => {
   const [inputValue, setInputValue] = useState(value);
 
@@ -84,4 +86,6 @@ const FormattedInput: React.FC<FormattedInputProps> = ({
   );
 };
 
+// Fix the export - both named and default exports
+export { FormattedInput };
 export default FormattedInput;

@@ -1,13 +1,13 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from '@/services/authService';
-import { FormattedInput } from '@/components/FormattedInput';
+import FormattedInput from '@/components/FormattedInput';
 
 const Login: React.FC = () => {
   const { toast } = useToast();
@@ -49,14 +49,20 @@ const Login: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const success = authService.registerCompanyAndUser({
-        companyName,
-        cnpj,
+      // Create company and user using separate calls to authService
+      // First, ensure we have the required methods in authService
+      
+      // For simplicity, we'll register the user with company info together
+      const success = authService.registerUser({
         fullName,
         email,
-        whatsapp,
         password,
+        whatsapp,
+        companyName,
+        cnpj,
+        isAdmin: true,  // First user is admin
       });
+      
       if (success) {
         toast({
           title: "Registro realizado com sucesso!",
@@ -87,7 +93,7 @@ const Login: React.FC = () => {
         </CardHeader>
         <CardContent className="grid gap-4">
           {isRegistering ? (
-            <Form onSubmit={handleRegister}>
+            <form onSubmit={handleRegister}>
               <div className="grid gap-2">
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Nome Completo</Label>
@@ -102,10 +108,10 @@ const Login: React.FC = () => {
                 <div className="space-y-2">
                   <Label htmlFor="whatsapp">WhatsApp</Label>
                   <FormattedInput
-                    label="WhatsApp"
+                    id="whatsapp"
+                    mask="phone"
                     value={whatsapp}
                     onChange={value => setWhatsapp(value)}
-                    mask="(99) 99999-9999"
                     placeholder="(11) 99999-9999"
                     required
                   />
@@ -121,14 +127,15 @@ const Login: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                   <FormattedInput
-                      label="CNPJ"
-                      value={cnpj}
-                      onChange={value => setCnpj(value)}
-                      mask="99.999.999/9999-99"
-                      placeholder="00.000.000/0000-00"
-                      required
-                    />
+                  <Label htmlFor="cnpj">CNPJ</Label>
+                  <FormattedInput
+                    id="cnpj"
+                    mask="cnpj"
+                    value={cnpj}
+                    onChange={value => setCnpj(value)}
+                    placeholder="00.000.000/0000-00"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
@@ -153,9 +160,9 @@ const Login: React.FC = () => {
                 </div>
                 <Button type="submit">Criar conta</Button>
               </div>
-            </Form>
+            </form>
           ) : (
-            <Form onSubmit={handleLogin}>
+            <form onSubmit={handleLogin}>
               <div className="grid gap-2">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
@@ -180,7 +187,7 @@ const Login: React.FC = () => {
                 </div>
                 <Button type="submit">Entrar</Button>
               </div>
-            </Form>
+            </form>
           )}
           <div className="px-4 text-center text-sm text-muted-foreground">
             {isRegistering ? (
