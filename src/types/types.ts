@@ -9,6 +9,7 @@ export interface User {
   password: string;
   isAdmin: boolean;
   createdAt: Date;
+  requirePasswordChange?: boolean;
 }
 
 export interface Company {

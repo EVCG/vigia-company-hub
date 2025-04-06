@@ -1,357 +1,365 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import Logo from '@/components/Logo';
-import { Eye, EyeOff, LockKeyhole, Mail, User, Building, Phone } from 'lucide-react';
-import { authService } from '@/services/authService';
+import { useToast } from "@/components/ui/use-toast";
 import FormattedInput from '@/components/FormattedInput';
+import { authService } from '@/services/authService';
+import Logo from '@/components/Logo';
+import ResetPasswordModal from '@/components/ResetPasswordModal';
+import ChangePasswordModal from '@/components/ChangePasswordModal';
 
 const Login: React.FC = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
-  // Estado para login
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: '',
+  });
   
-  // Estado para registro de empresa
-  const [companyName, setCompanyName] = useState('');
-  const [cnpj, setCnpj] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registerData, setRegisterData] = useState({
+    fullName: '',
+    email: '',
+    whatsapp: '',
+    companyName: '',
+    cnpj: '',
+    password: '',
+    confirmPassword: '',
+  });
   
-  // Função de login
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!loginEmail || !loginPassword) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const result = authService.login(loginEmail, loginPassword);
-    
-    if (result.success) {
-      toast({
-        title: "Sucesso",
-        description: "Login realizado com sucesso",
-      });
-      navigate('/dashboard');
-    } else {
-      toast({
-        title: "Erro",
-        description: result.message,
-        variant: "destructive",
-      });
-    }
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState('');
+  
+  const handleLoginInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setLoginData(prev => ({ ...prev, [name]: value }));
   };
   
-  // Função de registro
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegisterInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setRegisterData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoggingIn(true);
     
-    // Validar campos
-    if (!companyName || !cnpj || !fullName || !email || !whatsapp || !password || !confirmPassword) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Validar senhas
-    if (password !== confirmPassword) {
-      toast({
-        title: "Erro",
-        description: "As senhas não coincidem",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Registrar empresa
-    const result = authService.registerCompany(
-      companyName,
-      cnpj,
-      fullName,
-      email,
-      whatsapp,
-      password
-    );
-    
-    if (result.success) {
-      toast({
-        title: "Sucesso",
-        description: "Empresa registrada com sucesso",
-      });
-      
-      // Fazer login automaticamente
-      const loginResult = authService.login(email, password);
-      
-      if (loginResult.success) {
-        navigate('/dashboard');
+    try {
+      // Validação básica
+      if (!loginData.email || !loginData.password) {
+        toast({
+          title: "Erro",
+          description: "Por favor, preencha todos os campos",
+          variant: "destructive"
+        });
+        return;
       }
-    } else {
+      
+      const result = authService.login(loginData.email, loginData.password);
+      
+      if (result.success) {
+        toast({
+          title: "Login realizado",
+          description: "Você foi autenticado com sucesso"
+        });
+        
+        // Verificar se o usuário precisa trocar a senha
+        if (result.requirePasswordChange && result.user) {
+          setCurrentUserId(result.user.id);
+          setShowPasswordChangeModal(true);
+        } else {
+          // Redirecionamento após login bem-sucedido
+          navigate('/dashboard');
+        }
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao fazer login:", error);
       toast({
         title: "Erro",
-        description: result.message,
-        variant: "destructive",
+        description: "Ocorreu um erro ao tentar fazer login",
+        variant: "destructive"
       });
+    } finally {
+      setIsLoggingIn(false);
     }
   };
+  
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsRegistering(true);
+    
+    try {
+      // Validação básica
+      if (
+        !registerData.fullName ||
+        !registerData.email ||
+        !registerData.whatsapp ||
+        !registerData.companyName ||
+        !registerData.cnpj ||
+        !registerData.password
+      ) {
+        toast({
+          title: "Erro",
+          description: "Por favor, preencha todos os campos",
+          variant: "destructive"
+        });
+        setIsRegistering(false);
+        return;
+      }
+      
+      if (registerData.password !== registerData.confirmPassword) {
+        toast({
+          title: "Erro",
+          description: "As senhas não coincidem",
+          variant: "destructive"
+        });
+        setIsRegistering(false);
+        return;
+      }
+      
+      // Registro
+      const result = authService.registerCompany(
+        registerData.companyName,
+        registerData.cnpj,
+        registerData.fullName,
+        registerData.email,
+        registerData.whatsapp,
+        registerData.password
+      );
+      
+      if (result.success) {
+        toast({
+          title: "Cadastro realizado",
+          description: "Empresa e usuário criados com sucesso"
+        });
+        
+        // Fazer login automático após o registro
+        const loginResult = authService.login(registerData.email, registerData.password);
+        
+        if (loginResult.success) {
+          navigate('/dashboard');
+        } else {
+          toast({
+            title: "Atenção",
+            description: "Cadastro realizado, mas não foi possível fazer login automático. Por favor, faça login manualmente."
+          });
+        }
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao registrar:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao tentar realizar o cadastro",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  const handlePasswordChangeSuccess = () => {
+    setShowPasswordChangeModal(false);
+    navigate('/dashboard');
+  };
+  
+  // Verificar se o usuário já está autenticado
+  React.useEffect(() => {
+    if (authService.isAuthenticated()) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
   
   return (
-    <div className="min-h-screen flex">
-      {/* Lado esquerdo - Imagem de fundo */}
-      <div className="hidden md:flex md:w-1/2 bg-cover bg-center" style={{ backgroundImage: "url('/public/lovable-uploads/f9d53286-c6c8-49c4-b9da-bdfc00e6f312.png')" }}>
-        <div className="w-full h-full flex items-center justify-center bg-black bg-opacity-20">
-          <div className="p-8">
-            {/* Você pode adicionar algum conteúdo aqui se desejar */}
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      {/* Modal para troca obrigatória de senha */}
+      {showPasswordChangeModal && (
+        <ChangePasswordModal
+          userId={currentUserId}
+          isOpen={showPasswordChangeModal}
+          onSuccess={handlePasswordChangeSuccess}
+        />
+      )}
       
-      {/* Lado direito - Formulários */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <Logo size="lg" />
-            </div>
-          </div>
-          
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Cadastro</TabsTrigger>
-            </TabsList>
-            
-            {/* Tab de Login */}
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Usuário</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                    <Input 
-                      id="login-email" 
-                      type="email" 
-                      placeholder="Digite seu usuário..." 
-                      className="pl-10" 
-                      value={loginEmail} 
-                      onChange={(e) => setLoginEmail(e.target.value)} 
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="login-password">Senha</Label>
-                    <a href="#" className="text-sm text-primary hover:underline">
-                      Esqueceu sua senha?
-                    </a>
-                  </div>
-                  <div className="relative">
-                    <LockKeyhole className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                    <Input 
-                      id="login-password" 
-                      type={showLoginPassword ? "text" : "password"} 
-                      placeholder="Digite sua senha..." 
-                      className="pl-10" 
-                      value={loginPassword} 
-                      onChange={(e) => setLoginPassword(e.target.value)} 
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => setShowLoginPassword(!showLoginPassword)} 
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                    >
-                      {showLoginPassword ? (
-                        <EyeOff className="text-gray-400" size={18} />
-                      ) : (
-                        <Eye className="text-gray-400" size={18} />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-                  Entrar
-                </Button>
-                
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">Ou continue com</span>
-                  </div>
-                </div>
-                
-                <Button type="button" variant="outline" className="w-full">
-                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5 mr-2" />
-                  Fazer login como Elisson
-                </Button>
-                
-                <div className="text-center mt-6">
-                  <p className="text-sm text-gray-500">
-                    Ainda não tem uma conta? <span className="text-primary hover:underline cursor-pointer">Faça um teste grátis!</span>
-                  </p>
-                </div>
-              </form>
-            </TabsContent>
-            
-            {/* Tab de Cadastro */}
-            <TabsContent value="register">
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="company-name">Nome da Empresa</Label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                    <Input 
-                      id="company-name" 
-                      placeholder="Digite o nome da empresa" 
-                      className="pl-10" 
-                      value={companyName} 
-                      onChange={(e) => setCompanyName(e.target.value)} 
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="cnpj">CNPJ</Label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                    <FormattedInput 
-                      id="cnpj" 
-                      mask="cnpj" 
-                      placeholder="00.000.000/0000-00" 
-                      className="pl-10" 
-                      value={cnpj} 
-                      onChange={setCnpj} 
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="full-name">Nome Completo</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                    <Input 
-                      id="full-name" 
-                      placeholder="Digite seu nome completo" 
-                      className="pl-10" 
-                      value={fullName} 
-                      onChange={(e) => setFullName(e.target.value)} 
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+      <div className="w-full max-w-md">
+        <div className="flex justify-center mb-8">
+          <Logo size="lg" />
+        </div>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-2xl text-center">Bem-vindo ao VIGIA</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="login">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="register">Cadastrar</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="text-sm font-medium">E-mail</label>
                     <Input 
                       id="email" 
+                      name="email"
                       type="email" 
-                      placeholder="Digite seu e-mail" 
-                      className="pl-10" 
-                      value={email} 
-                      onChange={(e) => setEmail(e.target.value)} 
+                      placeholder="seu.email@exemplo.com" 
+                      value={loginData.email}
+                      onChange={handleLoginInputChange}
+                      autoComplete="email"
+                      required
                     />
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp">WhatsApp</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                    <FormattedInput 
-                      id="whatsapp" 
-                      mask="phone" 
-                      placeholder="(00) 00000-0000" 
-                      className="pl-10" 
-                      value={whatsapp} 
-                      onChange={setWhatsapp} 
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <div className="relative">
-                    <LockKeyhole className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label htmlFor="password" className="text-sm font-medium">Senha</label>
+                      <ResetPasswordModal />
+                    </div>
                     <Input 
                       id="password" 
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="Crie uma senha" 
-                      className="pl-10" 
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)} 
+                      name="password"
+                      type="password" 
+                      placeholder="********" 
+                      value={loginData.password}
+                      onChange={handleLoginInputChange}
+                      autoComplete="current-password"
+                      required
                     />
-                    <button 
-                      type="button" 
-                      onClick={() => setShowPassword(!showPassword)} 
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="text-gray-400" size={18} />
-                      ) : (
-                        <Eye className="text-gray-400" size={18} />
-                      )}
-                    </button>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirmar Senha</Label>
-                  <div className="relative">
-                    <LockKeyhole className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-[#006837] hover:bg-[#004d29]" 
+                    disabled={isLoggingIn}
+                  >
+                    {isLoggingIn ? "Entrando..." : "Entrar"}
+                  </Button>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="register">
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="fullName" className="text-sm font-medium">Nome Completo</label>
                     <Input 
-                      id="confirm-password" 
-                      type={showConfirmPassword ? "text" : "password"} 
-                      placeholder="Confirme sua senha" 
-                      className="pl-10" 
-                      value={confirmPassword} 
-                      onChange={(e) => setConfirmPassword(e.target.value)} 
+                      id="fullName" 
+                      name="fullName"
+                      placeholder="Seu nome completo" 
+                      value={registerData.fullName}
+                      onChange={handleRegisterInputChange}
+                      required
                     />
-                    <button 
-                      type="button" 
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="text-gray-400" size={18} />
-                      ) : (
-                        <Eye className="text-gray-400" size={18} />
-                      )}
-                    </button>
                   </div>
-                </div>
-                
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-                  Cadastrar
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="text-sm font-medium">E-mail</label>
+                    <Input 
+                      id="email" 
+                      name="email"
+                      type="email" 
+                      placeholder="seu.email@exemplo.com" 
+                      value={registerData.email}
+                      onChange={handleRegisterInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="whatsapp" className="text-sm font-medium">WhatsApp</label>
+                    <FormattedInput 
+                      id="whatsapp" 
+                      name="whatsapp"
+                      placeholder="(00) 00000-0000" 
+                      value={registerData.whatsapp}
+                      onChange={handleRegisterInputChange}
+                      format="(##) #####-####"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="companyName" className="text-sm font-medium">Nome da Empresa</label>
+                    <Input 
+                      id="companyName" 
+                      name="companyName"
+                      placeholder="Nome da sua empresa" 
+                      value={registerData.companyName}
+                      onChange={handleRegisterInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="cnpj" className="text-sm font-medium">CNPJ</label>
+                    <FormattedInput 
+                      id="cnpj" 
+                      name="cnpj"
+                      placeholder="00.000.000/0000-00" 
+                      value={registerData.cnpj}
+                      onChange={handleRegisterInputChange}
+                      format="##.###.###/####-##"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="registerPassword" className="text-sm font-medium">Senha</label>
+                    <Input 
+                      id="registerPassword" 
+                      name="password"
+                      type="password" 
+                      placeholder="********" 
+                      value={registerData.password}
+                      onChange={handleRegisterInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="confirmPassword" className="text-sm font-medium">Confirmar Senha</label>
+                    <Input 
+                      id="confirmPassword" 
+                      name="confirmPassword"
+                      type="password" 
+                      placeholder="********" 
+                      value={registerData.confirmPassword}
+                      onChange={handleRegisterInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-[#006837] hover:bg-[#004d29]" 
+                    disabled={isRegistering}
+                  >
+                    {isRegistering ? "Cadastrando..." : "Cadastrar"}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

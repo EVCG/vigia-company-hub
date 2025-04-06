@@ -83,7 +83,8 @@ export const authService = {
         companyName,
         password,
         isAdmin: true,
-        createdAt: new Date()
+        createdAt: new Date(),
+        requirePasswordChange: false
       };
 
       // Adicionar o usuário à empresa
@@ -138,7 +139,8 @@ export const authService = {
         companyName: company.name,
         password,
         isAdmin: false,
-        createdAt: new Date()
+        createdAt: new Date(),
+        requirePasswordChange: true // Funcionários precisam alterar a senha no primeiro login
       };
 
       // Adicionar o usuário à empresa
@@ -156,7 +158,7 @@ export const authService = {
   },
 
   // Login de usuário
-  login: (email: string, password: string): { success: boolean; message: string; user?: User } => {
+  login: (email: string, password: string): { success: boolean; message: string; user?: User; requirePasswordChange?: boolean } => {
     try {
       const users = getFromLocalStorage<User[]>('users') || [];
 
@@ -174,10 +176,82 @@ export const authService = {
       // Salvar o usuário atual
       saveToLocalStorage('currentUser', user);
 
-      return { success: true, message: 'Login realizado com sucesso', user };
+      return { 
+        success: true, 
+        message: 'Login realizado com sucesso', 
+        user,
+        requirePasswordChange: user.requirePasswordChange 
+      };
     } catch (error) {
       console.error('Erro ao fazer login:', error);
       return { success: false, message: 'Erro ao fazer login' };
+    }
+  },
+
+  // Atualizar senha do usuário
+  updatePassword: (userId: string, newPassword: string): { success: boolean; message: string } => {
+    try {
+      const users = getFromLocalStorage<User[]>('users') || [];
+      const companies = getFromLocalStorage<Company[]>('companies') || [];
+      
+      // Encontrar o usuário
+      const userIndex = users.findIndex(user => user.id === userId);
+      if (userIndex === -1) {
+        return { success: false, message: 'Usuário não encontrado' };
+      }
+      
+      // Atualizar a senha do usuário
+      users[userIndex].password = newPassword;
+      users[userIndex].requirePasswordChange = false;
+      
+      // Atualizar o usuário na empresa correspondente
+      const companyIndex = companies.findIndex(company => company.id === users[userIndex].companyId);
+      if (companyIndex !== -1) {
+        const employeeIndex = companies[companyIndex].employees.findIndex(emp => emp.id === userId);
+        if (employeeIndex !== -1) {
+          companies[companyIndex].employees[employeeIndex].password = newPassword;
+          companies[companyIndex].employees[employeeIndex].requirePasswordChange = false;
+        }
+      }
+      
+      // Atualizar o usuário atual se for o mesmo
+      const currentUser = getFromLocalStorage<User>('currentUser');
+      if (currentUser && currentUser.id === userId) {
+        currentUser.password = newPassword;
+        currentUser.requirePasswordChange = false;
+        saveToLocalStorage('currentUser', currentUser);
+      }
+      
+      // Salvar as alterações
+      saveToLocalStorage('users', users);
+      saveToLocalStorage('companies', companies);
+      
+      return { success: true, message: 'Senha atualizada com sucesso' };
+    } catch (error) {
+      console.error('Erro ao atualizar senha:', error);
+      return { success: false, message: 'Erro ao atualizar senha' };
+    }
+  },
+
+  // Solicitar redefinição de senha
+  requestPasswordReset: (email: string): { success: boolean; message: string } => {
+    try {
+      const users = getFromLocalStorage<User[]>('users') || [];
+      
+      // Encontrar o usuário pelo email
+      const user = users.find(user => user.email === email);
+      if (!user) {
+        // Por segurança, não revelamos se o email existe ou não
+        return { success: true, message: 'Se seu email estiver cadastrado, você receberá instruções para redefinir sua senha' };
+      }
+      
+      // Em um sistema real, enviaríamos um email com um link para redefinir a senha
+      // Aqui apenas simulamos o processo
+      
+      return { success: true, message: 'Se seu email estiver cadastrado, você receberá instruções para redefinir sua senha' };
+    } catch (error) {
+      console.error('Erro ao solicitar redefinição de senha:', error);
+      return { success: false, message: 'Erro ao processar sua solicitação' };
     }
   },
 

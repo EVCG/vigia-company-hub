@@ -7,13 +7,18 @@ import { authService } from '@/services/authService';
 
 const MainLayout: React.FC = () => {
   // Verificar se o usuário está autenticado
-  if (!authService.isAuthenticated()) {
+  const currentUser = authService.getCurrentUser();
+  
+  if (!currentUser) {
     return <Navigate to="/login" />;
   }
 
+  // Verificar se o usuário é admin para determinar acesso à página de funcionários
+  const isAdmin = currentUser.isAdmin;
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar isAdmin={isAdmin} />
       <div className="flex-1 ml-16">
         <Header />
         <main className="p-4">

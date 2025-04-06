@@ -1,80 +1,94 @@
 
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Activity, BarChart2, HelpCircle, Menu, X } from 'lucide-react';
-import Logo from './Logo';
-import { cn } from '@/lib/utils';
+import React from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { BarChart3, Search, FileText, HeadphonesIcon, LogOut, UserPlus } from 'lucide-react';
 import { authService } from '@/services/authService';
+import { useToast } from '@/components/ui/use-toast';
 
-const Sidebar: React.FC = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const location = useLocation();
-  const currentUser = authService.getCurrentUser();
+interface SidebarProps {
+  isAdmin?: boolean;
+}
 
-  const menuItems = [
-    { name: 'Home', path: '/dashboard', icon: Home },
-    { name: 'Monitorar', path: '/monitor', icon: Activity },
-    { name: 'Relatório', path: '/report', icon: BarChart2 },
-    { name: 'Suporte', path: '/support', icon: HelpCircle }
-  ];
+const Sidebar: React.FC<SidebarProps> = ({ isAdmin = false }) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const toggleSidebar = () => {
-    setIsExpanded(!isExpanded);
+  const handleLogout = () => {
+    authService.logout();
+    toast({
+      title: "Logout",
+      description: "Você saiu do sistema com sucesso",
+    });
+    navigate('/login');
   };
 
   return (
-    <div className={cn(
-      'fixed top-0 left-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-40',
-      isExpanded ? 'w-60' : 'w-16'
-    )}>
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between p-3 border-b border-gray-200">
-          <button onClick={toggleSidebar} className="text-gray-500 hover:text-primary p-1 focus:outline-none">
-            {isExpanded ? <X size={20} /> : <Menu size={20} />}
-          </button>
-          {isExpanded && (
-            <div className="flex items-center">
-              <Logo size="sm" />
-              <span className="ml-2 text-primary font-semibold">VIGIA - ALERTANDO VOCÊ</span>
-            </div>
-          )}
-        </div>
+    <div className="fixed left-0 top-0 h-full w-16 bg-[#006837] text-white flex flex-col justify-between z-10">
+      <div className="flex flex-col items-center pt-4 space-y-6">
+        {/* Links de navegação */}
+        <NavLink 
+          to="/dashboard" 
+          className={({ isActive }) => 
+            `w-10 h-10 flex items-center justify-center rounded-md transition-colors duration-200 ${isActive ? 'bg-white/20' : 'hover:bg-white/10'}`
+          }
+          title="Dashboard"
+        >
+          <BarChart3 className="w-6 h-6" />
+        </NavLink>
+
+        <NavLink 
+          to="/monitor" 
+          className={({ isActive }) => 
+            `w-10 h-10 flex items-center justify-center rounded-md transition-colors duration-200 ${isActive ? 'bg-white/20' : 'hover:bg-white/10'}`
+          }
+          title="Monitor"
+        >
+          <Search className="w-6 h-6" />
+        </NavLink>
+
+        <NavLink 
+          to="/report" 
+          className={({ isActive }) => 
+            `w-10 h-10 flex items-center justify-center rounded-md transition-colors duration-200 ${isActive ? 'bg-white/20' : 'hover:bg-white/10'}`
+          }
+          title="Relatórios"
+        >
+          <FileText className="w-6 h-6" />
+        </NavLink>
+
+        <NavLink 
+          to="/support" 
+          className={({ isActive }) => 
+            `w-10 h-10 flex items-center justify-center rounded-md transition-colors duration-200 ${isActive ? 'bg-white/20' : 'hover:bg-white/10'}`
+          }
+          title="Suporte"
+        >
+          <HeadphonesIcon className="w-6 h-6" />
+        </NavLink>
         
-        <nav className="flex-1 overflow-y-auto py-4">
-          <ul className="space-y-2 px-2">
-            {menuItems.map((item) => (
-              <li key={item.name}>
-                <Link
-                  to={item.path}
-                  className={cn(
-                    'flex items-center py-2 px-2 rounded-md transition-colors',
-                    location.pathname === item.path
-                      ? 'bg-accent text-primary font-medium'
-                      : 'text-gray-600 hover:bg-gray-100',
-                    !isExpanded && 'justify-center'
-                  )}
-                >
-                  <item.icon size={20} className="flex-shrink-0" />
-                  {isExpanded && <span className="ml-3">{item.name}</span>}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        
-        {isExpanded && currentUser && (
-          <div className="p-4 border-t border-gray-200">
-            <div className="flex items-center">
-              <div className="bg-primary rounded-full w-8 h-8 flex items-center justify-center text-white">
-                {currentUser.fullName.charAt(0)}
-              </div>
-              <div className="ml-2 overflow-hidden">
-                <p className="text-sm font-medium truncate">{currentUser.fullName}</p>
-                <p className="text-xs text-gray-500 truncate">{currentUser.email}</p>
-              </div>
-            </div>
-          </div>
+        {/* Link para gerenciamento de funcionários (apenas para admin) */}
+        {isAdmin && (
+          <NavLink 
+            to="/employee-management" 
+            className={({ isActive }) => 
+              `w-10 h-10 flex items-center justify-center rounded-md transition-colors duration-200 ${isActive ? 'bg-white/20' : 'hover:bg-white/10'}`
+            }
+            title="Gerenciar Funcionários"
+          >
+            <UserPlus className="w-6 h-6" />
+          </NavLink>
         )}
+      </div>
+
+      {/* Botão de logout */}
+      <div className="mb-6 flex justify-center">
+        <button 
+          onClick={handleLogout}
+          className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors duration-200"
+          title="Sair"
+        >
+          <LogOut className="w-6 h-6" />
+        </button>
       </div>
     </div>
   );

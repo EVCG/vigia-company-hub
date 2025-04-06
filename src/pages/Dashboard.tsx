@@ -1,39 +1,79 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, PieChart, Cell, Bar, XAxis, YAxis, Tooltip, Legend, Pie, ResponsiveContainer } from 'recharts';
+import { monitoringService } from '@/services/monitoringService';
+import { MonitoringItem } from '@/types/types';
 
 const Dashboard: React.FC = () => {
-  // Dados para os cards
-  const cardData = [
-    { id: 1, title: 'Cadastrados', value: '00', icon: '📋' },
-    { id: 2, title: 'Pregões vencidos', value: '00', icon: '🏆' },
-    { id: 3, title: 'Disputados', value: '00', icon: '👥' },
-    { id: 4, title: 'Vencidos', value: '00', icon: '💼' },
-  ];
-  
-  // Dados para o gráfico de barras
-  const barChartData = [
-    { name: 'MAR/2024', value: 24 },
-    { name: 'ABR/2024', value: 26 },
-    { name: 'MAI/2024', value: 12 },
-    { name: 'JUN/2024', value: 8 },
-    { name: 'JUL/2024', value: 48 },
-    { name: 'AGO/2024', value: 25 },
-    { name: 'SET/2024', value: 18 },
-    { name: 'OUT/2024', value: 100 },
-  ];
-  
-  // Dados para o gráfico de pizza
-  const pieChartData = [
-    { name: 'MINISTÉRIO DA ECONOMIA', value: 400, color: '#0088FE' },
-    { name: 'AGÊNCIA DO BRASIL', value: 300, color: '#00C49F' },
-    { name: 'AUTORIDADE NACIONAL DE PROTEÇÃO DE DADOS', value: 300, color: '#FFBB28' },
-    { name: 'TRIBUNAL REGIONAL ELEITORAL', value: 200, color: '#FF8042' },
-    { name: 'ESPECIALIZADA EM TECNOLOGIA', value: 150, color: '#8884d8' },
-    { name: 'INSTITUTO DE CIÊNCIA', value: 100, color: '#82ca9d' },
-    { name: 'AUTORIDADE ELEITORAL', value: 50, color: '#ffc658' },
-  ];
+  const [monitoringItems, setMonitoringItems] = useState<MonitoringItem[]>([]);
+  const [activeCount, setActiveCount] = useState(0);
+  const [disputedCount, setDisputedCount] = useState(0);
+  const [wonCount, setWonCount] = useState(0);
+  const [barChartData, setBarChartData] = useState<{ name: string; value: number }[]>([]);
+  const [pieChartData, setPieChartData] = useState<{ name: string; value: number; color: string }[]>([]);
+
+  useEffect(() => {
+    // Buscar itens de monitoramento
+    const items = monitoringService.getMonitoringItems();
+    setMonitoringItems(items);
+
+    // Contar itens ativos
+    const activeItems = items.filter(item => item.status === 'active');
+    setActiveCount(activeItems.length);
+
+    // Dados para tabela (disputados)
+    // Simular que todos na tabela de últimas disputas foram disputados
+    setDisputedCount(5); // Quantidade de itens na tabela de disputas
+
+    // Simular pregões vencidos (metade dos disputados)
+    setWonCount(Math.floor(disputedCount / 2));
+
+    // Processar dados para o gráfico de barras
+    // Agrupar por mês/ano da data do pregão
+    const months: { [key: string]: number } = {};
+    items.forEach(item => {
+      const dateParts = item.date.split('/');
+      if (dateParts.length === 3) {
+        const month = dateParts[1];
+        const year = dateParts[2];
+        const key = `${month}/${year}`;
+        if (months[key]) {
+          months[key]++;
+        } else {
+          months[key] = 1;
+        }
+      }
+    });
+
+    const barData = Object.entries(months).map(([name, value]) => ({
+      name,
+      value
+    }));
+    setBarChartData(barData);
+
+    // Processar dados para o gráfico de pizza
+    // Agrupar por empresa
+    const companies: { [key: string]: number } = {};
+    items.forEach(item => {
+      if (companies[item.company]) {
+        companies[item.company]++;
+      } else {
+        companies[item.company] = 1;
+      }
+    });
+
+    // Cores para o gráfico
+    const colors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+    
+    const pieData = Object.entries(companies).map(([name, value], index) => ({
+      name,
+      value,
+      color: colors[index % colors.length]
+    }));
+    setPieChartData(pieData);
+
+  }, [disputedCount]);
   
   // Dados para a tabela de últimas disputas
   const tableData = [
@@ -42,6 +82,14 @@ const Dashboard: React.FC = () => {
     { cnpj: '10.797.693/0001-99', portal: 'ComprasME', pregao: '42/03/4', uasg: '42303/4', totalVencido: 'R$ 0,00' },
     { cnpj: '10.797.693/0001-99', portal: 'ComprasME', pregao: '90/09/2024', uasg: '715633', totalVencido: 'R$ 0,00' },
     { cnpj: '10.797.693/0001-99', portal: 'ComprasME', pregao: '15/00/2024', uasg: '150000', totalVencido: 'R$ 0,00' },
+  ];
+
+  // Dados para os cards
+  const cardData = [
+    { id: 1, title: 'Cadastrados', value: monitoringItems.length.toString().padStart(2, '0'), icon: '📋' },
+    { id: 2, title: 'Pregões vencidos', value: wonCount.toString().padStart(2, '0'), icon: '🏆' },
+    { id: 3, title: 'Disputados', value: disputedCount.toString().padStart(2, '0'), icon: '👥' },
+    { id: 4, title: 'Vencidos', value: wonCount.toString().padStart(2, '0'), icon: '💼' },
   ];
   
   return (
