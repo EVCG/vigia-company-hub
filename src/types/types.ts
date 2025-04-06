@@ -1,23 +1,23 @@
-
 export interface User {
   id: string;
   fullName: string;
   email: string;
-  whatsapp: string;
-  companyId: string;
-  companyName: string;
   password: string;
+  whatsapp?: string;
+  companyName?: string;  // Optional for when user belongs to existing company
+  cnpj?: string;         // Optional for when user belongs to existing company
+  companyId: string;
   isAdmin: boolean;
   createdAt: Date;
-  requirePasswordChange?: boolean;
+  temporaryPassword?: boolean; // Flag to indicate if password is temporary
 }
 
 export interface Company {
   id: string;
   name: string;
   cnpj: string;
-  employees: User[];
   createdAt: Date;
+  employees: User[];  // Array of users that belong to this company
 }
 
 export interface AlertMessage {

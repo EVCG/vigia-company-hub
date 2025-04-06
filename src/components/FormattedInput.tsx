@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface FormattedInputProps {
   mask?: 'cpf' | 'cnpj' | 'phone' | 'cep';
@@ -74,18 +75,20 @@ const FormattedInput: React.FC<FormattedInputProps> = ({
   };
 
   return (
-    <Input
-      id={id}
-      value={inputValue}
-      onChange={handleChange}
-      placeholder={placeholder}
-      className={className}
-      required={required}
-      disabled={disabled}
-    />
+    <div className="space-y-2">
+      {label && <Label htmlFor={id}>{label}</Label>}
+      <Input
+        id={id}
+        value={inputValue}
+        onChange={handleChange}
+        placeholder={placeholder}
+        className={className}
+        required={required}
+        disabled={disabled}
+      />
+    </div>
   );
 };
 
-// Fix the export - both named and default exports
 export { FormattedInput };
 export default FormattedInput;

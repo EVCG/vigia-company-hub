@@ -62,7 +62,8 @@ const registerUser = (user: Omit<User, 'id' | 'createdAt'>): boolean => {
       ...user,
       companyId: companyId, // Usar o ID da empresa criada ou vazia se não houver
       password: user.password || 'padrao123', // Senha padrão
-      createdAt: new Date()
+      createdAt: new Date(),
+      temporaryPassword: true // Marcar como senha temporária
     };
     users.push(newUser);
     saveToLocalStorage('users', users);
@@ -94,7 +95,8 @@ const registerCompany = (companyData: { name: string; cnpj: string }): string =>
       id: generateId(),
       name: companyData.name,
       cnpj: companyData.cnpj,
-      createdAt: new Date()
+      createdAt: new Date(),
+      employees: [] // Inicializar com array vazio
     };
     
     companies.push(newCompany);
@@ -108,12 +110,12 @@ const registerCompany = (companyData: { name: string; cnpj: string }): string =>
 };
 
 // Função para atualizar senha
-const updatePassword = (userId: string, newPassword: string): boolean => {
+const updatePassword = (userId: string, newPassword: string): {success: boolean; message?: string} => {
   try {
     const users = getUsers();
     const userIndex = users.findIndex(u => u.id === userId);
     
-    if (userIndex === -1) return false;
+    if (userIndex === -1) return {success: false, message: "Usuário não encontrado"};
     
     users[userIndex].password = newPassword;
     users[userIndex].temporaryPassword = false; // Marca como senha permanente
@@ -126,10 +128,10 @@ const updatePassword = (userId: string, newPassword: string): boolean => {
       setCurrentUser(users[userIndex]);
     }
     
-    return true;
+    return {success: true};
   } catch (error) {
     console.error('Erro ao atualizar senha:', error);
-    return false;
+    return {success: false, message: "Erro ao atualizar senha"};
   }
 };
 

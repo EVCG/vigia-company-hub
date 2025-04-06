@@ -41,11 +41,38 @@ const Monitor: React.FC = () => {
   const filteredSuspended = filterItems(suspendedItems);
   const filteredClosed = filterItems(closedItems);
   
+  // Helper para obter as cores de acordo com o status
+  const getStatusColorClass = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'suspended':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'closed':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+  
+  const getStatusBgClass = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-50';
+      case 'suspended':
+        return 'bg-yellow-50';
+      case 'closed':
+        return 'bg-red-50';
+      default:
+        return '';
+    }
+  };
+  
   // Renderiza um item na lista de suspensos/encerrados
   const renderItem = (item: MonitoringItem) => (
     <div 
       key={item.id} 
-      className="border-b py-2 hover:bg-gray-50 cursor-pointer" 
+      className={`border-b py-2 hover:bg-gray-50 cursor-pointer ${selectedItem?.id === item.id ? 'bg-gray-100' : ''}`}
       onClick={() => setSelectedItem(item)}
     >
       <div className="grid grid-cols-3 gap-1">
@@ -55,6 +82,15 @@ const Monitor: React.FC = () => {
       </div>
     </div>
   );
+  
+  // Função para encontrar um pregão nas listas quando selecionado de Suspensos/Encerrados
+  const handleListItemClick = (item: MonitoringItem) => {
+    setSelectedItem(item);
+    // Rolar até o topo da página em dispositivos móveis
+    if (window.innerWidth < 768) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -85,7 +121,7 @@ const Monitor: React.FC = () => {
                 filteredAll.map(item => (
                   <div 
                     key={item.id} 
-                    className={`grid grid-cols-4 gap-2 text-sm py-1 border-t cursor-pointer hover:bg-gray-50 ${selectedItem?.id === item.id ? 'bg-gray-100' : ''}`}
+                    className={`grid grid-cols-4 gap-2 text-sm py-1 border-t cursor-pointer hover:bg-gray-50 ${selectedItem?.id === item.id ? 'bg-gray-100' : ''} ${getStatusBgClass(item.status)}`}
                     onClick={() => setSelectedItem(item)}
                   >
                     <div>{item.number}</div>
@@ -113,9 +149,9 @@ const Monitor: React.FC = () => {
         
         {/* Detalhes do pregão */}
         <Card className="lg:col-span-2">
-          <CardHeader className="p-4 border-b">
+          <CardHeader className={`p-4 border-b ${selectedItem ? getStatusBgClass(selectedItem.status) : ''}`}>
             {selectedItem ? (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <div className="text-xs text-gray-500">Número</div>
                   <div className="font-medium">{selectedItem.number}</div>
@@ -148,17 +184,13 @@ const Monitor: React.FC = () => {
                      'Ativo'}
                   </div>
                 </div>
-                <div className="col-span-3">
+                <div className="col-span-1 md:col-span-3">
                   <div className="grid grid-cols-3 gap-2">
                     <div className="text-xs font-medium text-center">Origem</div>
                     <div className="text-xs font-medium text-center">Data</div>
                     <div className="text-xs font-medium text-center">Mensagem</div>
                   </div>
-                  <div className={`px-2 py-1 rounded mt-1 grid grid-cols-3 text-xs ${
-                    selectedItem.status === 'suspended' ? 'bg-yellow-100' : 
-                    selectedItem.status === 'closed' ? 'bg-red-100' : 
-                    'bg-green-100'
-                  }`}>
+                  <div className={`px-2 py-1 rounded mt-1 grid grid-cols-3 text-xs ${getStatusColorClass(selectedItem.status)}`}>
                     <div className="text-center">{selectedItem.source}</div>
                     <div className="text-center">{selectedItem.date}</div>
                     <div className="truncate">{selectedItem.message}</div>
@@ -166,7 +198,7 @@ const Monitor: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <div className="text-xs text-gray-500">Número</div>
                   <div className="font-medium">-</div>
@@ -188,13 +220,13 @@ const Monitor: React.FC = () => {
                   <div className="font-medium">-</div>
                 </div>
                 <div></div>
-                <div className="col-span-3">
+                <div className="col-span-1 md:col-span-3">
                   <div className="grid grid-cols-3 gap-2">
                     <div className="text-xs font-medium text-center">Origem</div>
                     <div className="text-xs font-medium text-center">Data</div>
                     <div className="text-xs font-medium text-center">Mensagem</div>
                   </div>
-                  <div className="bg-green-100 px-2 py-1 rounded mt-1 grid grid-cols-3 text-xs">
+                  <div className="bg-gray-100 px-2 py-1 rounded mt-1 grid grid-cols-3 text-xs">
                     <div className="text-center">-</div>
                     <div className="text-center">-</div>
                     <div className="truncate">-</div>
@@ -208,15 +240,15 @@ const Monitor: React.FC = () => {
               <div className="w-full">
                 <h3 className="font-medium text-lg mb-4">Detalhes do Pregão</h3>
                 <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className="text-sm font-medium">Valor Estimado:</div>
                     <div className="text-sm">R$ {selectedItem.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className="text-sm font-medium">Título:</div>
                     <div className="text-sm">{selectedItem.title}</div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className="text-sm font-medium">Mensagem:</div>
                     <div className="text-sm">{selectedItem.message}</div>
                   </div>
@@ -239,7 +271,19 @@ const Monitor: React.FC = () => {
           </CardHeader>
           <CardContent className="p-4 h-64 overflow-y-auto">
             {filteredSuspended.length > 0 ? (
-              filteredSuspended.map(item => renderItem(item))
+              filteredSuspended.map(item => (
+                <div 
+                  key={item.id} 
+                  className="border-b py-2 hover:bg-yellow-50 cursor-pointer"
+                  onClick={() => handleListItemClick(item)}
+                >
+                  <div className="grid grid-cols-3 gap-1">
+                    <div className="font-medium">{item.source}</div>
+                    <div>{item.date}</div>
+                    <div className="overflow-hidden overflow-ellipsis whitespace-nowrap">{item.message}</div>
+                  </div>
+                </div>
+              ))
             ) : (
               <div className="text-center py-16 text-gray-400">
                 <p>Nenhum pregão encontrado no momento!</p>
@@ -256,7 +300,19 @@ const Monitor: React.FC = () => {
           </CardHeader>
           <CardContent className="p-4 h-64 overflow-y-auto">
             {filteredClosed.length > 0 ? (
-              filteredClosed.map(item => renderItem(item))
+              filteredClosed.map(item => (
+                <div 
+                  key={item.id} 
+                  className="border-b py-2 hover:bg-red-50 cursor-pointer"
+                  onClick={() => handleListItemClick(item)}
+                >
+                  <div className="grid grid-cols-3 gap-1">
+                    <div className="font-medium">{item.source}</div>
+                    <div>{item.date}</div>
+                    <div className="overflow-hidden overflow-ellipsis whitespace-nowrap">{item.message}</div>
+                  </div>
+                </div>
+              ))
             ) : (
               <div className="text-center py-16 text-gray-400">
                 <p>Nenhum pregão encontrado no momento!</p>
