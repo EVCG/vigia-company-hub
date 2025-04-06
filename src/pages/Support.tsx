@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { monitoringService } from '@/services/monitoringService';
 import { authService } from '@/services/authService';
 import { AlertMessage } from '@/types/types';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 const Support: React.FC = () => {
   const { toast } = useToast();
@@ -16,8 +17,19 @@ const Support: React.FC = () => {
   const [isSupportModalOpen, setSupportModalOpen] = useState(false);
   const [ticketSent, setTicketSent] = useState(false);
   const [currentAlert, setCurrentAlert] = useState<AlertMessage | null>(monitoringService.getAlerts()[0]);
+  const [carouselIndex, setCarouselIndex] = useState(0);
   
   const currentUser = authService.getCurrentUser();
+  
+  // Carousel images
+  const carouselImages = [
+    { title: "Monitoramento em Tempo Real", description: "Acompanhe seus pregões em tempo real", imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTB8fGRhc2hib2FyZHxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" },
+    { title: "Análise de Dados", description: "Visualize estatísticas e informações detalhadas", imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTJ8fGNoYXJ0c3xlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" },
+    { title: "Suporte Especializado", description: "Nossa equipe está sempre pronta para ajudar", imageUrl: "https://images.unsplash.com/photo-1560264280-88b68371db39?ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8Y3VzdG9tZXIlMjBzZXJ2aWNlfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" },
+    { title: "Alertas Instantâneos", description: "Receba notificações importantes sobre suas licitações", imageUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTF8fG5vdGlmaWNhdGlvbnxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" },
+    { title: "Gestão de Funcionários", description: "Organize sua equipe de forma eficiente", imageUrl: "https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8dGVhbXxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" },
+    { title: "Análises Avançadas", description: "Explore visualizações detalhadas de dados", imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTJ8fGNoYXJ0c3xlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" },
+  ];
   
   const handleSubmit = () => {
     if (!problemDescription.trim()) {
@@ -110,34 +122,37 @@ const Support: React.FC = () => {
       </div>
     );
   };
-  
+
   return (
     <div className="space-y-6">
-      {/* Alerta principal */}
-      {currentAlert && (
-        <div className="relative">
-          <div className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white bg-opacity-50 rounded-full p-4">
-            <button className="text-gray-400 hover:text-gray-700 focus:outline-none">
-              &lt;
-            </button>
-          </div>
-          <div className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white bg-opacity-50 rounded-full p-4">
-            <button className="text-gray-400 hover:text-gray-700 focus:outline-none">
-              &gt;
-            </button>
-          </div>
-          <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-none overflow-hidden">
-            <CardContent className="p-8 text-center">
-              <h2 className="text-secondary text-3xl font-bold mb-4">
-                {currentAlert.title}
-              </h2>
-              <h3 className="text-secondary text-5xl font-bold">
-                {currentAlert.content}
-              </h3>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Carousel */}
+      <div className="mb-8">
+        <Carousel className="w-full">
+          <CarouselContent>
+            {carouselImages.map((item, index) => (
+              <CarouselItem key={index}>
+                <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-none overflow-hidden">
+                  <CardContent className="p-8 flex flex-col md:flex-row items-center">
+                    <div className="md:w-1/2 p-4">
+                      <h2 className="text-secondary text-3xl font-bold mb-4">{item.title}</h2>
+                      <p className="text-secondary text-lg">{item.description}</p>
+                    </div>
+                    <div className="md:w-1/2">
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.title} 
+                        className="w-full h-64 object-cover rounded-lg shadow-lg"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="left-2" />
+          <CarouselNext className="right-2" />
+        </Carousel>
+      </div>
       
       {/* Cards de recursos */}
       {renderFeatureCards()}
@@ -148,14 +163,7 @@ const Support: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="flex justify-between items-center">
               <span>Suporte</span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-8 w-8 p-0" 
-                onClick={() => setSupportModalOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              {/* Removido o botão de fechar duplicado, mantendo apenas o X do DialogContent */}
             </DialogTitle>
             <DialogDescription>
               Por favor, preencha o campo abaixo de forma completa e precisa para que possamos solucionar seu problema de maneira eficaz. Nossa equipe entrará em contato com você assim que possível.

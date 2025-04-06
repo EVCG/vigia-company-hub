@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +16,7 @@ const Monitor: React.FC = () => {
   // Estados
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [selectedItem, setSelectedItem] = useState<MonitoringItem | null>(null);
   
   // Obter itens de monitoramento
   const allItems = monitoringService.getMonitoringItems();
@@ -40,9 +41,13 @@ const Monitor: React.FC = () => {
   const filteredSuspended = filterItems(suspendedItems);
   const filteredClosed = filterItems(closedItems);
   
-  // Renderiza um item
+  // Renderiza um item na lista de suspensos/encerrados
   const renderItem = (item: MonitoringItem) => (
-    <div key={item.id} className="border-b py-2">
+    <div 
+      key={item.id} 
+      className="border-b py-2 hover:bg-gray-50 cursor-pointer" 
+      onClick={() => setSelectedItem(item)}
+    >
       <div className="grid grid-cols-3 gap-1">
         <div className="font-medium">{item.source}</div>
         <div>{item.date}</div>
@@ -78,7 +83,11 @@ const Monitor: React.FC = () => {
               
               {filteredAll.length > 0 ? (
                 filteredAll.map(item => (
-                  <div key={item.id} className="grid grid-cols-4 gap-2 text-sm py-1 border-t">
+                  <div 
+                    key={item.id} 
+                    className={`grid grid-cols-4 gap-2 text-sm py-1 border-t cursor-pointer hover:bg-gray-50 ${selectedItem?.id === item.id ? 'bg-gray-100' : ''}`}
+                    onClick={() => setSelectedItem(item)}
+                  >
                     <div>{item.number}</div>
                     <div className="truncate">{item.company}</div>
                     <div>{item.date}</div>
@@ -105,44 +114,117 @@ const Monitor: React.FC = () => {
         {/* Detalhes do pregão */}
         <Card className="lg:col-span-2">
           <CardHeader className="p-4 border-b">
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <div className="text-xs text-gray-500">Número</div>
-                <div className="font-medium">-</div>
-              </div>
-              <div>
-                <div className="text-xs text-gray-500">Portal</div>
-                <div className="font-medium">-</div>
-              </div>
-              <div>
-                <div className="text-xs text-gray-500">UASG/UF</div>
-                <div className="font-medium">-</div>
-              </div>
-              <div>
-                <div className="text-xs text-gray-500">Órgão</div>
-                <div className="font-medium">-</div>
-              </div>
-              <div>
-                <div className="text-xs text-gray-500">Empresa</div>
-                <div className="font-medium">-</div>
-              </div>
-              <div></div>
-              <div className="col-span-3">
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-xs font-medium text-center">Origem</div>
-                  <div className="text-xs font-medium text-center">Data</div>
-                  <div className="text-xs font-medium text-center">Mensagem</div>
+            {selectedItem ? (
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500">Número</div>
+                  <div className="font-medium">{selectedItem.number}</div>
                 </div>
-                <div className="bg-green-100 px-2 py-1 rounded mt-1 grid grid-cols-3 text-xs">
-                  <div className="text-center">ComprasNet</div>
-                  <div className="text-center">-</div>
-                  <div className="truncate">-</div>
+                <div>
+                  <div className="text-xs text-gray-500">Portal</div>
+                  <div className="font-medium">{selectedItem.portal}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">UASG/UF</div>
+                  <div className="font-medium">{selectedItem.uasg}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Órgão</div>
+                  <div className="font-medium">{selectedItem.company}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Empresa</div>
+                  <div className="font-medium">-</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Status</div>
+                  <div className={`font-medium ${
+                    selectedItem.status === 'suspended' ? 'text-yellow-500' : 
+                    selectedItem.status === 'closed' ? 'text-red-500' : 
+                    'text-green-500'
+                  }`}>
+                    {selectedItem.status === 'suspended' ? 'Suspenso' : 
+                     selectedItem.status === 'closed' ? 'Encerrado' : 
+                     'Ativo'}
+                  </div>
+                </div>
+                <div className="col-span-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-xs font-medium text-center">Origem</div>
+                    <div className="text-xs font-medium text-center">Data</div>
+                    <div className="text-xs font-medium text-center">Mensagem</div>
+                  </div>
+                  <div className={`px-2 py-1 rounded mt-1 grid grid-cols-3 text-xs ${
+                    selectedItem.status === 'suspended' ? 'bg-yellow-100' : 
+                    selectedItem.status === 'closed' ? 'bg-red-100' : 
+                    'bg-green-100'
+                  }`}>
+                    <div className="text-center">{selectedItem.source}</div>
+                    <div className="text-center">{selectedItem.date}</div>
+                    <div className="truncate">{selectedItem.message}</div>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500">Número</div>
+                  <div className="font-medium">-</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Portal</div>
+                  <div className="font-medium">-</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">UASG/UF</div>
+                  <div className="font-medium">-</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Órgão</div>
+                  <div className="font-medium">-</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Empresa</div>
+                  <div className="font-medium">-</div>
+                </div>
+                <div></div>
+                <div className="col-span-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-xs font-medium text-center">Origem</div>
+                    <div className="text-xs font-medium text-center">Data</div>
+                    <div className="text-xs font-medium text-center">Mensagem</div>
+                  </div>
+                  <div className="bg-green-100 px-2 py-1 rounded mt-1 grid grid-cols-3 text-xs">
+                    <div className="text-center">-</div>
+                    <div className="text-center">-</div>
+                    <div className="truncate">-</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="p-4 h-64 flex items-center justify-center">
-            <p className="text-gray-400">Nenhum pregão encontrado no momento!</p>
+            {selectedItem ? (
+              <div className="w-full">
+                <h3 className="font-medium text-lg mb-4">Detalhes do Pregão</h3>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-sm font-medium">Valor Estimado:</div>
+                    <div className="text-sm">R$ {selectedItem.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-sm font-medium">Título:</div>
+                    <div className="text-sm">{selectedItem.title}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-sm font-medium">Mensagem:</div>
+                    <div className="text-sm">{selectedItem.message}</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-400">Nenhum pregão selecionado no momento!</p>
+            )}
           </CardContent>
         </Card>
       </div>

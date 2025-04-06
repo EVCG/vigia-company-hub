@@ -1,366 +1,206 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
-import FormattedInput from '@/components/FormattedInput';
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
 import { authService } from '@/services/authService';
-import Logo from '@/components/Logo';
-import ResetPasswordModal from '@/components/ResetPasswordModal';
-import ChangePasswordModal from '@/components/ChangePasswordModal';
+import { FormattedInput } from '@/components/FormattedInput';
 
 const Login: React.FC = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: '',
-  });
-  
-  const [registerData, setRegisterData] = useState({
-    fullName: '',
-    email: '',
-    whatsapp: '',
-    companyName: '',
-    cnpj: '',
-    password: '',
-    confirmPassword: '',
-  });
-  
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const navigate = useNavigate();
   const [isRegistering, setIsRegistering] = useState(false);
-  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState('');
-  
-  const handleLoginInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setLoginData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleRegisterInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setRegisterData(prev => ({ ...prev, [name]: value }));
-  };
-  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [cnpj, setCnpj] = useState('');
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoggingIn(true);
-    
     try {
-      // Validação básica
-      if (!loginData.email || !loginData.password) {
+      const success = authService.login(email, password);
+      if (success) {
         toast({
-          title: "Erro",
-          description: "Por favor, preencha todos os campos",
-          variant: "destructive"
+          title: "Login realizado com sucesso!",
+          description: "Você será redirecionado para o painel.",
         });
-        return;
-      }
-      
-      const result = authService.login(loginData.email, loginData.password);
-      
-      if (result.success) {
-        toast({
-          title: "Login realizado",
-          description: "Você foi autenticado com sucesso"
-        });
-        
-        // Verificar se o usuário precisa trocar a senha
-        if (result.requirePasswordChange && result.user) {
-          setCurrentUserId(result.user.id);
-          setShowPasswordChangeModal(true);
-        } else {
-          // Redirecionamento após login bem-sucedido
-          navigate('/dashboard');
-        }
+        navigate('/dashboard');
       } else {
         toast({
-          title: "Erro",
-          description: result.message,
-          variant: "destructive"
+          variant: "destructive",
+          title: "Erro ao realizar o login.",
+          description: "Credenciais inválidas. Verifique seu e-mail e senha.",
         });
       }
     } catch (error) {
-      console.error("Erro ao fazer login:", error);
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao tentar fazer login",
-        variant: "destructive"
+        variant: "destructive",
+        title: "Erro ao realizar o login.",
+        description: "Ocorreu um erro ao processar sua solicitação.",
       });
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-  
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsRegistering(true);
-    
-    try {
-      // Validação básica
-      if (
-        !registerData.fullName ||
-        !registerData.email ||
-        !registerData.whatsapp ||
-        !registerData.companyName ||
-        !registerData.cnpj ||
-        !registerData.password
-      ) {
-        toast({
-          title: "Erro",
-          description: "Por favor, preencha todos os campos",
-          variant: "destructive"
-        });
-        setIsRegistering(false);
-        return;
-      }
-      
-      if (registerData.password !== registerData.confirmPassword) {
-        toast({
-          title: "Erro",
-          description: "As senhas não coincidem",
-          variant: "destructive"
-        });
-        setIsRegistering(false);
-        return;
-      }
-      
-      // Registro
-      const result = authService.registerCompany(
-        registerData.companyName,
-        registerData.cnpj,
-        registerData.fullName,
-        registerData.email,
-        registerData.whatsapp,
-        registerData.password
-      );
-      
-      if (result.success) {
-        toast({
-          title: "Cadastro realizado",
-          description: "Empresa e usuário criados com sucesso"
-        });
-        
-        // Fazer login automático após o registro
-        const loginResult = authService.login(registerData.email, registerData.password);
-        
-        if (loginResult.success) {
-          navigate('/dashboard');
-        } else {
-          toast({
-            title: "Atenção",
-            description: "Cadastro realizado, mas não foi possível fazer login automático. Por favor, faça login manualmente."
-          });
-        }
-      } else {
-        toast({
-          title: "Erro",
-          description: result.message,
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao registrar:", error);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao tentar realizar o cadastro",
-        variant: "destructive"
-      });
-    } finally {
-      setIsRegistering(false);
     }
   };
 
-  const handlePasswordChangeSuccess = () => {
-    setShowPasswordChangeModal(false);
-    navigate('/dashboard');
-  };
-  
-  // Verificar se o usuário já está autenticado
-  React.useEffect(() => {
-    if (authService.isAuthenticated()) {
-      navigate('/dashboard');
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const success = authService.registerCompanyAndUser({
+        companyName,
+        cnpj,
+        fullName,
+        email,
+        whatsapp,
+        password,
+      });
+      if (success) {
+        toast({
+          title: "Registro realizado com sucesso!",
+          description: "Sua conta foi criada. Faça login para continuar.",
+        });
+        setIsRegistering(false);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro ao realizar o registro.",
+          description: "Ocorreu um erro ao processar sua solicitação.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao realizar o registro.",
+        description: "Ocorreu um erro ao processar sua solicitação.",
+      });
     }
-  }, [navigate]);
-  
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      {/* Modal para troca obrigatória de senha */}
-      {showPasswordChangeModal && (
-        <ChangePasswordModal
-          userId={currentUserId}
-          isOpen={showPasswordChangeModal}
-          onSuccess={handlePasswordChangeSuccess}
-        />
-      )}
-      
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <Logo size="lg" />
-        </div>
-        
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-2xl text-center">Bem-vindo ao VIGIA</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Cadastrar</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium">E-mail</label>
-                    <Input 
-                      id="email" 
-                      name="email"
-                      type="email" 
-                      placeholder="seu.email@exemplo.com" 
-                      value={loginData.email}
-                      onChange={handleLoginInputChange}
-                      autoComplete="email"
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <Card className="w-full max-w-md p-4">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl text-center">{isRegistering ? "Criar uma conta" : "Login"}</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {isRegistering ? (
+            <Form onSubmit={handleRegister}>
+              <div className="grid gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Nome Completo</Label>
+                  <Input
+                    id="fullName"
+                    placeholder="Seu nome"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="whatsapp">WhatsApp</Label>
+                  <FormattedInput
+                    label="WhatsApp"
+                    value={whatsapp}
+                    onChange={value => setWhatsapp(value)}
+                    mask="(99) 99999-9999"
+                    placeholder="(11) 99999-9999"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="companyName">Nome da Empresa</Label>
+                  <Input
+                    id="companyName"
+                    placeholder="Nome da sua empresa"
+                    required
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                   <FormattedInput
+                      label="CNPJ"
+                      value={cnpj}
+                      onChange={value => setCnpj(value)}
+                      mask="99.999.999/9999-99"
+                      placeholder="00.000.000/0000-00"
                       required
                     />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <label htmlFor="password" className="text-sm font-medium">Senha</label>
-                      <ResetPasswordModal />
-                    </div>
-                    <Input 
-                      id="password" 
-                      name="password"
-                      type="password" 
-                      placeholder="********" 
-                      value={loginData.password}
-                      onChange={handleLoginInputChange}
-                      autoComplete="current-password"
-                      required
-                    />
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-[#006837] hover:bg-[#004d29]" 
-                    disabled={isLoggingIn}
-                  >
-                    {isLoggingIn ? "Entrando..." : "Entrar"}
-                  </Button>
-                </form>
-              </TabsContent>
-              
-              <TabsContent value="register">
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="fullName" className="text-sm font-medium">Nome Completo</label>
-                    <Input 
-                      id="fullName" 
-                      name="fullName"
-                      placeholder="Seu nome completo" 
-                      value={registerData.fullName}
-                      onChange={handleRegisterInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium">E-mail</label>
-                    <Input 
-                      id="email" 
-                      name="email"
-                      type="email" 
-                      placeholder="seu.email@exemplo.com" 
-                      value={registerData.email}
-                      onChange={handleRegisterInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="whatsapp" className="text-sm font-medium">WhatsApp</label>
-                    <FormattedInput 
-                      id="whatsapp" 
-                      name="whatsapp"
-                      placeholder="(00) 00000-0000" 
-                      value={registerData.whatsapp}
-                      onChange={handleRegisterInputChange}
-                      format="(##) #####-####"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="companyName" className="text-sm font-medium">Nome da Empresa</label>
-                    <Input 
-                      id="companyName" 
-                      name="companyName"
-                      placeholder="Nome da sua empresa" 
-                      value={registerData.companyName}
-                      onChange={handleRegisterInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="cnpj" className="text-sm font-medium">CNPJ</label>
-                    <FormattedInput 
-                      id="cnpj" 
-                      name="cnpj"
-                      placeholder="00.000.000/0000-00" 
-                      value={registerData.cnpj}
-                      onChange={handleRegisterInputChange}
-                      format="##.###.###/####-##"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="registerPassword" className="text-sm font-medium">Senha</label>
-                    <Input 
-                      id="registerPassword" 
-                      name="password"
-                      type="password" 
-                      placeholder="********" 
-                      value={registerData.password}
-                      onChange={handleRegisterInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="confirmPassword" className="text-sm font-medium">Confirmar Senha</label>
-                    <Input 
-                      id="confirmPassword" 
-                      name="confirmPassword"
-                      type="password" 
-                      placeholder="********" 
-                      value={registerData.confirmPassword}
-                      onChange={handleRegisterInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-[#006837] hover:bg-[#004d29]" 
-                    disabled={isRegistering}
-                  >
-                    {isRegistering ? "Cadastrando..." : "Cadastrar"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="seuemail@exemplo.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                <Button type="submit">Criar conta</Button>
+              </div>
+            </Form>
+          ) : (
+            <Form onSubmit={handleLogin}>
+              <div className="grid gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="seuemail@exemplo.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                <Button type="submit">Entrar</Button>
+              </div>
+            </Form>
+          )}
+          <div className="px-4 text-center text-sm text-muted-foreground">
+            {isRegistering ? (
+              <>
+                Já tem uma conta?{" "}
+                <Button variant="link" onClick={() => setIsRegistering(false)}>
+                  Entrar
+                </Button>
+              </>
+            ) : (
+              <>
+                Não tem uma conta?{" "}
+                <Button variant="link" onClick={() => setIsRegistering(true)}>
+                  Criar uma conta
+                </Button>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
