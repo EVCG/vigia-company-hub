@@ -10,9 +10,11 @@ import { monitoringService } from '@/services/monitoringService';
 import { authService } from '@/services/authService';
 import { AlertMessage } from '@/types/types';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { useNavigate } from 'react-router-dom';
 
 const Support: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [problemDescription, setProblemDescription] = useState('');
   const [isSupportModalOpen, setSupportModalOpen] = useState(false);
   const [ticketSent, setTicketSent] = useState(false);
@@ -65,6 +67,19 @@ const Support: React.FC = () => {
     setSupportModalOpen(true);
   };
   
+  // Funções de navegação para os cards
+  const handleMonitorarClick = () => {
+    navigate('/dashboard');
+  };
+  
+  const handleNewsClick = () => {
+    window.open('https://www.gov.br/compras/pt-br/acesso-a-informacao/noticias', '_blank');
+  };
+  
+  const handleAnaliseClick = () => {
+    navigate('/report');
+  };
+  
   // Função para renderizar os cards que não são de suporte
   const renderFeatureCards = () => {
     return (
@@ -78,6 +93,9 @@ const Support: React.FC = () => {
             <p className="text-sm text-gray-500">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
+            <Button className="mt-4" onClick={handleMonitorarClick}>
+              Acessar Dashboard
+            </Button>
           </CardContent>
         </Card>
         
@@ -90,6 +108,9 @@ const Support: React.FC = () => {
             <p className="text-sm text-gray-500">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
+            <Button className="mt-4" onClick={handleNewsClick}>
+              Acessar Notícias
+            </Button>
           </CardContent>
         </Card>
         
@@ -102,6 +123,9 @@ const Support: React.FC = () => {
             <p className="text-sm text-gray-500">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
+            <Button className="mt-4" onClick={handleAnaliseClick}>
+              Acessar Relatórios
+            </Button>
           </CardContent>
         </Card>
         
@@ -132,16 +156,16 @@ const Support: React.FC = () => {
             {carouselImages.map((item, index) => (
               <CarouselItem key={index}>
                 <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-none overflow-hidden">
-                  <CardContent className="p-8 flex flex-col md:flex-row items-center">
+                  <CardContent className="p-4 md:p-8 flex flex-col md:flex-row items-center">
                     <div className="md:w-1/2 p-4">
-                      <h2 className="text-secondary text-3xl font-bold mb-4">{item.title}</h2>
-                      <p className="text-secondary text-lg">{item.description}</p>
+                      <h2 className="text-secondary text-xl md:text-3xl font-bold mb-2 md:mb-4">{item.title}</h2>
+                      <p className="text-secondary text-sm md:text-lg">{item.description}</p>
                     </div>
-                    <div className="md:w-1/2">
+                    <div className="md:w-1/2 mt-4 md:mt-0">
                       <img 
                         src={item.imageUrl} 
                         alt={item.title} 
-                        className="w-full h-64 object-cover rounded-lg shadow-lg"
+                        className="w-full h-48 md:h-64 object-cover rounded-lg shadow-lg"
                       />
                     </div>
                   </CardContent>
@@ -163,7 +187,6 @@ const Support: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="flex justify-between items-center">
               <span>Suporte</span>
-              {/* Removido o botão de fechar duplicado, mantendo apenas o X do DialogContent */}
             </DialogTitle>
             <DialogDescription>
               Por favor, preencha o campo abaixo de forma completa e precisa para que possamos solucionar seu problema de maneira eficaz. Nossa equipe entrará em contato com você assim que possível.

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/authService';
@@ -20,6 +20,14 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
   
   const auctions = monitoringService.getMonitoringItems();
 
+  useEffect(() => {
+    // Verificar se as notificações já foram lidas anteriormente
+    const notificationsStatus = localStorage.getItem('notificationsRead');
+    if (notificationsStatus === 'true') {
+      setNotificationsRead(true);
+    }
+  }, []);
+
   const handleLogout = () => {
     authService.logout();
     navigate('/login');
@@ -27,7 +35,9 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
 
   const handleNotificationsOpen = () => {
     setIsNotificationsOpen(true);
-    setNotificationsRead(true); // Mark notifications as read when opened
+    setNotificationsRead(true);
+    // Salvar o estado de notificações lidas no localStorage
+    localStorage.setItem('notificationsRead', 'true');
   };
 
   // Get status color class
