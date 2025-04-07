@@ -33,7 +33,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   if (showLoading) {
     return (
       <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
-        <div className="flex flex-col items-center justify-center text-center">
+        <div className="flex flex-col items-center justify-center text-center px-4">
           <div className="animate-bounce mb-8">
             <Logo size="lg" />
           </div>

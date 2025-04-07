@@ -127,10 +127,19 @@ const Login: React.FC = () => {
     }
     
     try {
-      // Create company and user using separate calls to authService
-      // First, ensure we have the required methods in authService
+      // Verificar se já existe uma empresa com o mesmo CNPJ
+      const companyCNPJ = authService.getCompanyByCNPJ(cnpj);
       
-      // For simplicity, we'll register the user with company info together
+      if (companyCNPJ) {
+        toast({
+          variant: "destructive",
+          title: "CNPJ já cadastrado",
+          description: "Já existe uma empresa cadastrada com este CNPJ.",
+        });
+        return;
+      }
+      
+      // Para simplificar, vamos registrar o usuário com as informações da empresa
       const success = authService.registerUser({
         fullName,
         email,
@@ -138,8 +147,8 @@ const Login: React.FC = () => {
         whatsapp,
         companyName,
         cnpj,
-        isAdmin: true,  // First user is admin
-        companyId: "", // This will be set by registerUser
+        isAdmin: true,  // Primeiro usuário é admin
+        companyId: "", // Isto será definido pelo registerUser
       });
       
       if (success) {
@@ -167,7 +176,7 @@ const Login: React.FC = () => {
   const handleResetPassword = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simulate sending reset email
+    // Simulação do envio de e-mail para redefinição
     if (resetEmail) {
       toast({
         title: "Email enviado",

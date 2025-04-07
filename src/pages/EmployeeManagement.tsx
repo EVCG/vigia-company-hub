@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { User } from '@/types/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Pencil, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type FormData = {
   fullName: string;
@@ -17,6 +18,7 @@ type FormData = {
   whatsapp: string;
   password: string;
   isAdmin: boolean;
+  role: 'gerente' | 'funcionario';
 };
 
 const EmployeeManagement: React.FC = () => {
@@ -29,12 +31,21 @@ const EmployeeManagement: React.FC = () => {
     whatsapp: '',
     password: '',
     isAdmin: false,
+    role: 'funcionario'
   });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [employees, setEmployees] = useState<User[]>([]);
 
   // Get current admin user and company employees
   const currentUser = authService.getCurrentUser();
-  const employees = authService.getUsersByCompany(currentUser?.companyId || '');
+
+  // Carregar os funcionários ao montar o componente
+  useEffect(() => {
+    if (currentUser?.companyId) {
+      const usersList = authService.getUsersByCompany(currentUser.companyId);
+      setEmployees(usersList);
+    }
+  }, [currentUser?.companyId]);
 
   const resetForm = () => {
     setFormData({
@@ -43,6 +54,7 @@ const EmployeeManagement: React.FC = () => {
       whatsapp: '',
       password: '',
       isAdmin: false,
+      role: 'funcionario'
     });
     setCurrentUserId(null);
     setIsEditMode(false);
@@ -66,10 +78,32 @@ const EmployeeManagement: React.FC = () => {
     }));
   };
 
+  const handleRoleChange = (value: 'gerente' | 'funcionario') => {
+    setFormData(prev => ({
+      ...prev,
+      role: value,
+      isAdmin: value === 'gerente' // gerentes são admins
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!currentUser) return;
+
+    // Verificar se o WhatsApp já está em uso
+    const isWhatsAppInUse = employees.some(
+      employee => employee.whatsapp === formData.whatsapp && employee.id !== currentUserId
+    );
+
+    if (isWhatsAppInUse) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Este número de WhatsApp já está sendo usado por outro funcionário.",
+      });
+      return;
+    }
 
     try {
       if (isEditMode && currentUserId) {
@@ -88,6 +122,13 @@ const EmployeeManagement: React.FC = () => {
             title: "Sucesso",
             description: "Funcionário atualizado com sucesso.",
           });
+          
+          // Recarregar a lista de funcionários
+          if (currentUser?.companyId) {
+            const updatedList = authService.getUsersByCompany(currentUser.companyId);
+            setEmployees(updatedList);
+          }
+          
           handleClose();
         } else {
           toast({
@@ -102,7 +143,7 @@ const EmployeeManagement: React.FC = () => {
           ...formData,
           companyId: currentUser.companyId,
           companyName: currentUser.companyName,
-          requirePasswordChange: true, // Forçar mudança de senha no primeiro login
+          temporaryPassword: true, // Forçar mudança de senha no primeiro login
         };
         
         const success = authService.registerUser(newUser);
@@ -112,6 +153,13 @@ const EmployeeManagement: React.FC = () => {
             title: "Sucesso",
             description: "Funcionário adicionado com sucesso. Senha temporária foi configurada.",
           });
+          
+          // Recarregar a lista de funcionários
+          if (currentUser?.companyId) {
+            const updatedList = authService.getUsersByCompany(currentUser.companyId);
+            setEmployees(updatedList);
+          }
+          
           handleClose();
         } else {
           toast({
@@ -137,6 +185,7 @@ const EmployeeManagement: React.FC = () => {
       whatsapp: employee.whatsapp,
       password: '', // Não exibimos a senha atual por segurança
       isAdmin: employee.isAdmin,
+      role: employee.isAdmin ? 'gerente' : 'funcionario'
     });
     setCurrentUserId(employee.id);
     setIsEditMode(true);
@@ -151,6 +200,12 @@ const EmployeeManagement: React.FC = () => {
         title: "Sucesso",
         description: "Funcionário removido com sucesso.",
       });
+      
+      // Recarregar a lista de funcionários
+      if (currentUser?.companyId) {
+        const updatedList = authService.getUsersByCompany(currentUser.companyId);
+        setEmployees(updatedList);
+      }
     } else {
       toast({
         variant: "destructive",
@@ -175,7 +230,7 @@ const EmployeeManagement: React.FC = () => {
                 <TableHead>Nome</TableHead>
                 <TableHead>E-mail</TableHead>
                 <TableHead>WhatsApp</TableHead>
-                <TableHead>Admin</TableHead>
+                <TableHead>Cargo</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -186,7 +241,7 @@ const EmployeeManagement: React.FC = () => {
                     <TableCell className="font-medium">{employee.fullName}</TableCell>
                     <TableCell>{employee.email}</TableCell>
                     <TableCell>{employee.whatsapp}</TableCell>
-                    <TableCell>{employee.isAdmin ? 'Sim' : 'Não'}</TableCell>
+                    <TableCell>{employee.isAdmin ? 'Gerente' : 'Funcionário'}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
                         <Button
@@ -300,16 +355,20 @@ const EmployeeManagement: React.FC = () => {
                   </p>
                 </div>
               )}
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="isAdmin"
-                  name="isAdmin"
-                  checked={formData.isAdmin}
-                  onChange={handleInputChange}
-                  className="rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <label htmlFor="isAdmin">Administrador</label>
+              <div className="space-y-2">
+                <label htmlFor="role">Cargo</label>
+                <Select 
+                  value={formData.role} 
+                  onValueChange={(value) => handleRoleChange(value as 'gerente' | 'funcionario')}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o cargo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gerente">Gerente</SelectItem>
+                    <SelectItem value="funcionario">Funcionário</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter>

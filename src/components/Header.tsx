@@ -40,6 +40,13 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
     localStorage.setItem('notificationsRead', 'true');
   };
 
+  const handleNotificationClick = (item: MonitoringItem) => {
+    setIsNotificationsOpen(false);
+    // Redireciona para a página de monitor e armazena o item selecionado no localStorage
+    localStorage.setItem('selectedMonitorItem', JSON.stringify(item));
+    navigate('/monitor');
+  };
+
   // Get status color class
   const getStatusColorClass = (status: string) => {
     switch (status) {
@@ -55,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 py-2 px-4 flex justify-between items-center">
+    <header className="bg-white border-b border-gray-200 py-2 px-4 flex justify-between items-center sticky top-0 z-10">
       <div className="flex items-center">
         {children}
       </div>
@@ -81,7 +88,11 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
                 <div className="max-h-[300px] overflow-y-auto">
                   {auctions.length > 0 ? (
                     auctions.map((auction) => (
-                      <div key={auction.id} className="border-b py-2 px-4 hover:bg-gray-50">
+                      <div 
+                        key={auction.id} 
+                        className="border-b py-2 px-4 hover:bg-gray-50 cursor-pointer"
+                        onClick={() => handleNotificationClick(auction)}
+                      >
                         <div className="flex justify-between items-center mb-1">
                           <span className="font-medium">{auction.number}</span>
                           <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColorClass(auction.status)}`}>

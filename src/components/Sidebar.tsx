@@ -10,9 +10,9 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isAdmin = false }) => {
   return (
     <div className="fixed left-0 top-0 h-full w-16 bg-[#006837] text-white flex flex-col z-10">
-      <div className="flex flex-col items-center justify-between pt-4 h-full">
+      <div className="flex flex-col items-center pt-4">
+        {/* Links de navegação */}
         <div className="flex flex-col items-center space-y-6">
-          {/* Links de navegação */}
           <NavLink 
             to="/dashboard" 
             className={({ isActive }) => 

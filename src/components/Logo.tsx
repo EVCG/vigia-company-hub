@@ -15,7 +15,7 @@ const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
 
   return (
     <div className={`${sizes[size]} ${className} relative`}>
-      <div className="bg-[url('/public/lovable-uploads/30896f5a-9872-4a4c-ae80-9f53a7474e15.png')] bg-cover bg-center w-full h-full"></div>
+      <div className="bg-[url('/lovable-uploads/59f3a138-d3c1-4cb0-afb9-7b80177d79b6.png')] bg-cover bg-center w-full h-full"></div>
     </div>
   );
 };

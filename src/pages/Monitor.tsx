@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, AlertTriangle, XCircle } from 'lucide-react';
@@ -21,6 +21,21 @@ const Monitor: React.FC = () => {
   const allItems = monitoringService.getMonitoringItems();
   const suspendedItems = monitoringService.getMonitoringItemsByStatus('suspended');
   const closedItems = monitoringService.getMonitoringItemsByStatus('closed');
+
+  // Verificar se há um item selecionado no localStorage (vindo das notificações)
+  useEffect(() => {
+    const storedItem = localStorage.getItem('selectedMonitorItem');
+    if (storedItem) {
+      try {
+        const parsedItem = JSON.parse(storedItem);
+        setSelectedItem(parsedItem);
+        // Limpar o localStorage após carregar o item
+        localStorage.removeItem('selectedMonitorItem');
+      } catch (error) {
+        console.error("Erro ao carregar item do localStorage:", error);
+      }
+    }
+  }, []);
   
   // Filtrar itens de monitoramento com base na busca
   const filterItems = (items: MonitoringItem[]): MonitoringItem[] => {
