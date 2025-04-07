@@ -1,8 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, AlertTriangle, XCircle } from 'lucide-react';
 import { monitoringService } from '@/services/monitoringService';
 import { MonitoringItem } from '@/types/types';
@@ -67,21 +66,6 @@ const Monitor: React.FC = () => {
         return '';
     }
   };
-  
-  // Renderiza um item na lista de suspensos/encerrados
-  const renderItem = (item: MonitoringItem) => (
-    <div 
-      key={item.id} 
-      className={`border-b py-2 hover:bg-gray-50 cursor-pointer ${selectedItem?.id === item.id ? 'bg-gray-100' : ''}`}
-      onClick={() => setSelectedItem(item)}
-    >
-      <div className="grid grid-cols-3 gap-1">
-        <div className="font-medium">{item.source}</div>
-        <div>{item.date}</div>
-        <div className="overflow-hidden overflow-ellipsis whitespace-nowrap">{item.message}</div>
-      </div>
-    </div>
-  );
   
   // Função para encontrar um pregão nas listas quando selecionado de Suspensos/Encerrados
   const handleListItemClick = (item: MonitoringItem) => {
@@ -285,8 +269,8 @@ const Monitor: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div className="text-center py-16 text-gray-400">
-                <p>Nenhum pregão encontrado no momento!</p>
+              <div className="text-center py-16 text-gray-400 flex items-center justify-center h-full">
+                <p>Nenhuma conversa encontrada no momento!</p>
               </div>
             )}
           </CardContent>
@@ -314,8 +298,8 @@ const Monitor: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div className="text-center py-16 text-gray-400">
-                <p>Nenhum pregão encontrado no momento!</p>
+              <div className="text-center py-16 text-gray-400 flex items-center justify-center h-full">
+                <p>Nenhuma conversa encontrada no momento!</p>
               </div>
             )}
           </CardContent>

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,12 +23,29 @@ const Login: React.FC = () => {
   const [cnpj, setCnpj] = useState('');
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  
+  // Estados para troca de senha temporária
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const user = authService.login(email, password);
       if (user) {
+        // Verificar se é uma senha temporária
+        if (user.temporaryPassword) {
+          setShowChangePassword(true);
+          setCurrentUserId(user.id);
+          toast({
+            title: "Senha temporária detectada",
+            description: "Por favor, altere sua senha para continuar.",
+          });
+          return;
+        }
+        
         toast({
           title: "Login realizado com sucesso!",
           description: "Você será redirecionado para o painel.",
@@ -45,6 +62,53 @@ const Login: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Erro ao realizar o login.",
+        description: "Ocorreu um erro ao processar sua solicitação.",
+      });
+    }
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmNewPassword) {
+      toast({
+        variant: "destructive",
+        title: "Senhas não conferem",
+        description: "A nova senha e a confirmação devem ser idênticas.",
+      });
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Senha muito curta",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+      });
+      return;
+    }
+    
+    try {
+      const result = authService.updatePassword(currentUserId, newPassword);
+      
+      if (result.success) {
+        toast({
+          title: "Senha alterada com sucesso!",
+          description: "Agora você pode acessar o sistema com sua nova senha.",
+        });
+        setShowChangePassword(false);
+        navigate('/dashboard');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro ao alterar senha",
+          description: result.message || "Não foi possível alterar sua senha.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao alterar senha",
         description: "Ocorreu um erro ao processar sua solicitação.",
       });
     }
@@ -127,7 +191,38 @@ const Login: React.FC = () => {
           <CardTitle className="text-2xl font-bold">Bem-vindo ao VIGIA</CardTitle>
         </CardHeader>
         
-        {showResetPassword ? (
+        {showChangePassword ? (
+          <CardContent className="p-6">
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div className="text-center mb-4">
+                <p className="text-gray-600">Você está usando uma senha temporária. Por favor, crie uma nova senha para continuar.</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Nova Senha</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-new-password">Confirmar Nova Senha</Label>
+                <Input
+                  id="confirm-new-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full bg-primary">Alterar Senha</Button>
+            </form>
+          </CardContent>
+        ) : showResetPassword ? (
           <CardContent className="p-6">
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div className="space-y-2">

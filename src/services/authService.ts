@@ -47,8 +47,8 @@ const registerUser = (user: Omit<User, 'id' | 'createdAt'>): boolean => {
     }
 
     // Se temos informações da empresa, vamos criar/verificar a empresa primeiro
-    let companyId = "";
-    if (user.companyName && user.cnpj) {
+    let companyId = user.companyId || "";
+    if (user.companyName && user.cnpj && !companyId) {
       companyId = registerCompany({
         name: user.companyName,
         cnpj: user.cnpj
@@ -63,7 +63,7 @@ const registerUser = (user: Omit<User, 'id' | 'createdAt'>): boolean => {
       companyId: companyId, // Usar o ID da empresa criada ou vazia se não houver
       password: user.password || 'padrao123', // Senha padrão
       createdAt: new Date(),
-      temporaryPassword: true // Marcar como senha temporária
+      temporaryPassword: user.temporaryPassword !== undefined ? user.temporaryPassword : true // Marcar como senha temporária
     };
     users.push(newUser);
     saveToLocalStorage('users', users);
@@ -72,6 +72,7 @@ const registerUser = (user: Omit<User, 'id' | 'createdAt'>): boolean => {
     if (users.length === 1) {
       setCurrentUser(newUser);
     }
+    
     return true;
   } catch (error) {
     console.error('Erro ao registrar usuário:', error);
@@ -181,7 +182,7 @@ const updateUser = (userId: string, userData: Partial<User>): boolean => {
     users[userIndex] = { ...users[userIndex], ...userData };
     
     // Salvar alterações
-    localStorage.setItem('users', JSON.stringify(users));
+    saveToLocalStorage('users', JSON.stringify(users));
     
     // Atualizar o usuário atual se necessário
     const currentUser = getCurrentUser();
@@ -208,7 +209,7 @@ const deleteUser = (userId: string): boolean => {
     users = users.filter(user => user.id !== userId);
     
     // Salvar alterações
-    localStorage.setItem('users', JSON.stringify(users));
+    saveToLocalStorage('users', users);
     return true;
   } catch (error) {
     console.error('Erro ao excluir usuário:', error);
