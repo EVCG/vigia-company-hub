@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +23,6 @@ const Login: React.FC = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   
-  // Estados para troca de senha temporária
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -35,7 +33,6 @@ const Login: React.FC = () => {
     try {
       const user = authService.login(email, password);
       if (user) {
-        // Verificar se é uma senha temporária
         if (user.temporaryPassword) {
           setShowChangePassword(true);
           setCurrentUserId(user.id);
@@ -127,10 +124,9 @@ const Login: React.FC = () => {
     }
     
     try {
-      // Verificar se já existe uma empresa com o mesmo CNPJ
-      const companyCNPJ = authService.getCompanyByCNPJ(cnpj);
+      const existingCompany = authService.getCompanyByCNPJ(cnpj);
       
-      if (companyCNPJ) {
+      if (existingCompany) {
         toast({
           variant: "destructive",
           title: "CNPJ já cadastrado",
@@ -139,7 +135,6 @@ const Login: React.FC = () => {
         return;
       }
       
-      // Para simplificar, vamos registrar o usuário com as informações da empresa
       const success = authService.registerUser({
         fullName,
         email,
@@ -147,8 +142,8 @@ const Login: React.FC = () => {
         whatsapp,
         companyName,
         cnpj,
-        isAdmin: true,  // Primeiro usuário é admin
-        companyId: "", // Isto será definido pelo registerUser
+        isAdmin: true,
+        companyId: "",
       });
       
       if (success) {
@@ -176,7 +171,6 @@ const Login: React.FC = () => {
   const handleResetPassword = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simulação do envio de e-mail para redefinição
     if (resetEmail) {
       toast({
         title: "Email enviado",

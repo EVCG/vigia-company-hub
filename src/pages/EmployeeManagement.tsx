@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,10 +35,8 @@ const EmployeeManagement: React.FC = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [employees, setEmployees] = useState<User[]>([]);
 
-  // Get current admin user and company employees
   const currentUser = authService.getCurrentUser();
 
-  // Carregar os funcionários ao montar o componente
   useEffect(() => {
     if (currentUser?.companyId) {
       const usersList = authService.getUsersByCompany(currentUser.companyId);
@@ -82,7 +79,7 @@ const EmployeeManagement: React.FC = () => {
     setFormData(prev => ({
       ...prev,
       role: value,
-      isAdmin: value === 'gerente' // gerentes são admins
+      isAdmin: value === 'gerente'
     }));
   };
 
@@ -91,7 +88,6 @@ const EmployeeManagement: React.FC = () => {
     
     if (!currentUser) return;
 
-    // Verificar se o WhatsApp já está em uso
     const isWhatsAppInUse = employees.some(
       employee => employee.whatsapp === formData.whatsapp && employee.id !== currentUserId
     );
@@ -107,15 +103,14 @@ const EmployeeManagement: React.FC = () => {
 
     try {
       if (isEditMode && currentUserId) {
-        // Update existing employee
-        const updatedUser = {
-          ...formData,
-          id: currentUserId,
-          companyId: currentUser.companyId,
-          companyName: currentUser.companyName,
+        const updatedUser: Partial<User> = {
+          fullName: formData.fullName,
+          email: formData.email,
+          whatsApp: formData.whatsapp,
+          isAdmin: formData.isAdmin,
         };
         
-        const success = authService.updateUser(currentUserId, updatedUser as User);
+        const success = authService.updateUser(currentUserId, updatedUser);
         
         if (success) {
           toast({
@@ -123,7 +118,6 @@ const EmployeeManagement: React.FC = () => {
             description: "Funcionário atualizado com sucesso.",
           });
           
-          // Recarregar a lista de funcionários
           if (currentUser?.companyId) {
             const updatedList = authService.getUsersByCompany(currentUser.companyId);
             setEmployees(updatedList);
@@ -138,12 +132,15 @@ const EmployeeManagement: React.FC = () => {
           });
         }
       } else {
-        // Add new employee
         const newUser = {
-          ...formData,
+          fullName: formData.fullName,
+          email: formData.email,
+          whatsapp: formData.whatsapp,
+          password: formData.password,
+          isAdmin: formData.isAdmin,
           companyId: currentUser.companyId,
           companyName: currentUser.companyName,
-          temporaryPassword: true, // Forçar mudança de senha no primeiro login
+          temporaryPassword: true,
         };
         
         const success = authService.registerUser(newUser);
@@ -154,7 +151,6 @@ const EmployeeManagement: React.FC = () => {
             description: "Funcionário adicionado com sucesso. Senha temporária foi configurada.",
           });
           
-          // Recarregar a lista de funcionários
           if (currentUser?.companyId) {
             const updatedList = authService.getUsersByCompany(currentUser.companyId);
             setEmployees(updatedList);
@@ -183,7 +179,7 @@ const EmployeeManagement: React.FC = () => {
       fullName: employee.fullName,
       email: employee.email,
       whatsapp: employee.whatsapp,
-      password: '', // Não exibimos a senha atual por segurança
+      password: '',
       isAdmin: employee.isAdmin,
       role: employee.isAdmin ? 'gerente' : 'funcionario'
     });
@@ -201,7 +197,6 @@ const EmployeeManagement: React.FC = () => {
         description: "Funcionário removido com sucesso.",
       });
       
-      // Recarregar a lista de funcionários
       if (currentUser?.companyId) {
         const updatedList = authService.getUsersByCompany(currentUser.companyId);
         setEmployees(updatedList);

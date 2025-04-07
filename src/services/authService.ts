@@ -1,4 +1,3 @@
-
 import { User, Company } from '../types/types';
 
 // Função para gerar um ID único
@@ -34,6 +33,12 @@ const getUsers = (): User[] => {
 // Função para obter todas as empresas
 const getCompanies = (): Company[] => {
   return getFromLocalStorage<Company[]>('companies') || [];
+};
+
+// Função para buscar empresa pelo CNPJ
+const getCompanyByCNPJ = (cnpj: string): Company | null => {
+  const companies = getCompanies();
+  return companies.find(company => company.cnpj === cnpj) || null;
 };
 
 // Função para simular o registro de um usuário
@@ -227,5 +232,6 @@ export const authService = {
   getUsersByCompany,
   updateUser,
   deleteUser,
-  updatePassword
+  updatePassword,
+  getCompanyByCNPJ
 };
