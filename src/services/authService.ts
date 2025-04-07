@@ -1,4 +1,3 @@
-
 import { User, Company } from '../types/types';
 
 // Função para gerar um ID único
@@ -78,7 +77,7 @@ const registerUser = (user: Omit<User, 'id' | 'createdAt'>): boolean => {
       companyId: companyId, // Usar o ID da empresa criada ou existente
       password: user.password || 'padrao123', // Senha padrão
       createdAt: new Date(),
-      temporaryPassword: user.temporaryPassword !== undefined ? user.temporaryPassword : true, // Marcar como senha temporária
+      temporaryPassword: false, // Alterado para false para não solicitar a alteração da senha
       role: user.role || 'funcionario' // Definir papel padrão se não especificado
     };
     

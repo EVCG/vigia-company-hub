@@ -82,12 +82,10 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
       <div className="flex items-center">
         {currentUser && (
           <>
-            {companyName && (
-              <span className="text-sm font-medium text-gray-700 mr-4 hidden md:inline">
-                Empresa: {companyName}
-              </span>
-            )}
-            <span className="text-sm text-gray-600 mr-4 hidden md:inline">{currentUser.email}</span>
+            <span className="text-sm font-medium text-gray-700 mr-auto hidden md:inline">
+              {companyName}
+            </span>
+            <span className="text-sm text-gray-600 ml-auto mr-4 hidden md:inline">{currentUser.email}</span>
             
             <Popover open={isNotificationsOpen} onOpenChange={setIsNotificationsOpen}>
               <PopoverTrigger asChild>
