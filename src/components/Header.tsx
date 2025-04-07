@@ -15,6 +15,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ children }) => {
   const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
+  const [companyName, setCompanyName] = useState<string>("");
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notificationsRead, setNotificationsRead] = useState(false);
   
@@ -25,6 +26,17 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
     const notificationsStatus = localStorage.getItem('notificationsRead');
     if (notificationsStatus === 'true') {
       setNotificationsRead(true);
+    }
+
+    // Obter o nome da empresa do usuário atual
+    if (currentUser && currentUser.companyId) {
+      const company = authService.getCurrentUserCompany();
+      if (company) {
+        setCompanyName(company.name);
+      } else if (currentUser.companyName) {
+        // Fallback para o companyName do usuário se não encontrar a empresa
+        setCompanyName(currentUser.companyName);
+      }
     }
   }, []);
 
@@ -70,6 +82,11 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
       <div className="flex items-center">
         {currentUser && (
           <>
+            {companyName && (
+              <span className="text-sm font-medium text-gray-700 mr-4 hidden md:inline">
+                Empresa: {companyName}
+              </span>
+            )}
             <span className="text-sm text-gray-600 mr-4 hidden md:inline">{currentUser.email}</span>
             
             <Popover open={isNotificationsOpen} onOpenChange={setIsNotificationsOpen}>

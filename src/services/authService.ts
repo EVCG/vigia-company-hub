@@ -1,3 +1,4 @@
+
 import { User, Company } from '../types/types';
 
 // Função para gerar um ID único
@@ -54,22 +55,33 @@ const registerUser = (user: Omit<User, 'id' | 'createdAt'>): boolean => {
     // Se temos informações da empresa, vamos criar/verificar a empresa primeiro
     let companyId = user.companyId || "";
     if (user.companyName && user.cnpj && !companyId) {
-      companyId = registerCompany({
-        name: user.companyName,
-        cnpj: user.cnpj
-      });
+      // Verificar se a empresa já existe
+      const existingCompany = getCompanyByCNPJ(user.cnpj);
       
-      if (!companyId) return false;
+      if (existingCompany) {
+        // Se a empresa já existe, usar o ID dela
+        companyId = existingCompany.id;
+      } else {
+        // Se não existe, criar nova empresa
+        companyId = registerCompany({
+          name: user.companyName,
+          cnpj: user.cnpj
+        });
+        
+        if (!companyId) return false;
+      }
     }
 
     const newUser: User = {
       id: generateId(),
       ...user,
-      companyId: companyId, // Usar o ID da empresa criada ou vazia se não houver
+      companyId: companyId, // Usar o ID da empresa criada ou existente
       password: user.password || 'padrao123', // Senha padrão
       createdAt: new Date(),
-      temporaryPassword: user.temporaryPassword !== undefined ? user.temporaryPassword : true // Marcar como senha temporária
+      temporaryPassword: user.temporaryPassword !== undefined ? user.temporaryPassword : true, // Marcar como senha temporária
+      role: user.role || 'funcionario' // Definir papel padrão se não especificado
     };
+    
     users.push(newUser);
     saveToLocalStorage('users', users);
     
@@ -164,6 +176,15 @@ const getCurrentUser = (): User | null => {
   return getFromLocalStorage<User>('currentUser');
 };
 
+// Função para obter a empresa do usuário atual
+const getCurrentUserCompany = (): Company | null => {
+  const currentUser = getCurrentUser();
+  if (!currentUser || !currentUser.companyId) return null;
+  
+  const companies = getCompanies();
+  return companies.find(company => company.id === currentUser.companyId) || null;
+};
+
 // Função para definir o usuário atualmente logado
 const setCurrentUser = (user: User): void => {
   saveToLocalStorage('currentUser', user);
@@ -187,7 +208,7 @@ const updateUser = (userId: string, userData: Partial<User>): boolean => {
     users[userIndex] = { ...users[userIndex], ...userData };
     
     // Salvar alterações
-    saveToLocalStorage('users', JSON.stringify(users));
+    saveToLocalStorage('users', users);
     
     // Atualizar o usuário atual se necessário
     const currentUser = getCurrentUser();
@@ -228,6 +249,7 @@ export const authService = {
   login,
   logout,
   getCurrentUser,
+  getCurrentUserCompany,
   setCurrentUser,
   getUsersByCompany,
   updateUser,

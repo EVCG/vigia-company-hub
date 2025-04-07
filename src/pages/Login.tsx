@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { authService } from '@/services/authService';
 import FormattedInput from '@/components/FormattedInput';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { User } from '@/types/types';
 
 const Login: React.FC = () => {
   const { toast } = useToast();
@@ -126,16 +127,7 @@ const Login: React.FC = () => {
     try {
       const existingCompany = authService.getCompanyByCNPJ(cnpj);
       
-      if (existingCompany) {
-        toast({
-          variant: "destructive",
-          title: "CNPJ já cadastrado",
-          description: "Já existe uma empresa cadastrada com este CNPJ.",
-        });
-        return;
-      }
-      
-      const success = authService.registerUser({
+      const newUser: Omit<User, 'id' | 'createdAt'> = {
         fullName,
         email,
         password,
@@ -143,8 +135,11 @@ const Login: React.FC = () => {
         companyName,
         cnpj,
         isAdmin: true,
-        companyId: "",
-      });
+        companyId: existingCompany ? existingCompany.id : "",
+        role: "gerente"
+      };
+      
+      const success = authService.registerUser(newUser);
       
       if (success) {
         toast({
@@ -156,7 +151,7 @@ const Login: React.FC = () => {
         toast({
           variant: "destructive",
           title: "Erro ao realizar o registro.",
-          description: "Ocorreu um erro ao processar sua solicitação.",
+          description: "Ocorreu um erro ao processar sua solicitação. Verifique se o email já está cadastrado.",
         });
       }
     } catch (error) {

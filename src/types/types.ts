@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   fullName: string;
@@ -10,6 +11,7 @@ export interface User {
   isAdmin: boolean;
   createdAt: Date;
   temporaryPassword?: boolean; // Flag to indicate if password is temporary
+  role?: "gerente" | "funcionario"; // Papel do usuário na empresa
 }
 
 export interface Company {
