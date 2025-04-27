@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { sendResetCode } from "../services/sendResetCode";
 import {
   Dialog,
   DialogContent,
@@ -23,27 +23,37 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ trigger }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    // Simulação do envio de e-mail
-    setTimeout(() => {
+  
+    try {
+      await sendResetCode(email); // ⬅️ Usando a função que você criou
+  
       toast({
         title: "E-mail enviado",
-        description: `Foi enviado um link para redefinição de senha para ${email}`,
+        description: `Foi enviado um código de redefinição para ${email}.`,
         duration: 5000,
       });
-      setIsSubmitting(false);
-      setEmail('');
-      
-      // Fechar o modal após o envio
+  
       const closeButton = document.querySelector('[data-reset-password-close]');
       if (closeButton instanceof HTMLButtonElement) {
         closeButton.click();
       }
-    }, 2000);
+  
+      setEmail('');
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "Erro ao enviar",
+        description: error?.message || 'Erro inesperado ao enviar o e-mail.',
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
 
   return (
     <Dialog>
@@ -74,8 +84,8 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ trigger }) => {
             <DialogClose data-reset-password-close asChild>
               <Button type="button" variant="outline">Cancelar</Button>
             </DialogClose>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={isSubmitting || !email}
               className="bg-[#006837] hover:bg-[#004d29]"
             >
