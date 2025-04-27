@@ -15,6 +15,7 @@ export async function sendResetCode(email: string) {
 
     const data = await response.json();
     return data;
+    
   } catch (error: any) {
     console.error('Erro no envio do código:', error);
     throw new Error(error?.message || 'Erro inesperado na comunicação com o servidor.');
