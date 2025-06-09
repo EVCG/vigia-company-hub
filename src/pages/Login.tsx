@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,16 +7,65 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { authService } from '@/services/authService';
-import FormattedInput from '@/components/FormattedInput';
-import { User } from '@/types/types';
-import ResetPasswordModal from '@/components/ResetPasswordModal'; // <-- IMPORTAR O MODAL
+import ResetPasswordModal from '@/components/ResetPasswordModal';
+
+// Interfaces temporárias (remover quando tiver os services reais)
+interface User {
+  id: string;
+  fullName: string;
+  email: string;
+  password: string;
+  whatsapp: string;
+  companyName: string;
+  cnpj: string;
+  isAdmin: boolean;
+  companyId: string;
+  role: string;
+  temporaryPassword?: boolean;
+  createdAt?: string;
+}
+
+// Mock services (substituir pelos reais quando disponíveis)
+const authService = {
+  login: (email: string, password: string) => {
+    // Simular login
+    console.log('Login attempt:', { email, password });
+    return { 
+      id: '1', 
+      email, 
+      fullName: 'Usuario Teste',
+      temporaryPassword: false 
+    };
+  },
+  getCompanyByCNPJ: (cnpj: string) => {
+    console.log('Getting company by CNPJ:', cnpj);
+    return null;
+  },
+  registerUser: (user: Omit<User, 'id' | 'createdAt'>) => {
+    console.log('Registering user:', user);
+    return true;
+  },
+  updatePassword: (userId: string, newPassword: string) => {
+    console.log('Updating password for user:', userId);
+    return { success: true };
+  }
+};
+
+const sendResetCode = async (email: string) => {
+  console.log('Sending reset code to:', email);
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return true;
+};
+
+const FormattedInput = ({ value, onChange, ...props }: any) => (
+  <Input value={value} onChange={onChange} {...props} />
+);
 
 const Login: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<string>("login");
+  const [activeTab, setActiveTab] = useState("login");
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,9 +78,35 @@ const Login: React.FC = () => {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [currentUserId, setCurrentUserId] = useState('');
 
-  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false); // <-- CONTROLE DO MODAL
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+
+  const handleSendResetCode = async () => {
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "E-mail obrigatório",
+        description: "Por favor, informe seu e-mail para recuperar a senha.",
+      });
+      return;
+    }
+
+    try {
+      await sendResetCode(email);
+      setIsResetPasswordModalOpen(true);
+      toast({
+        title: "Código enviado!",
+        description: "Verifique seu e-mail para inserir o código de recuperação.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao enviar código",
+        description: error.message || "Não foi possível enviar o código.",
+      });
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +135,7 @@ const Login: React.FC = () => {
           description: "Credenciais inválidas. Verifique seu e-mail e senha.",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         variant: "destructive",
         title: "Erro ao realizar o login.",
@@ -107,10 +183,10 @@ const Login: React.FC = () => {
         toast({
           variant: "destructive",
           title: "Erro ao realizar o registro.",
-          description: "Ocorreu um erro ao processar sua solicitação. Verifique se o email já está cadastrado.",
+          description: "Verifique se o email já está cadastrado.",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         variant: "destructive",
         title: "Erro ao realizar o registro.",
@@ -154,10 +230,10 @@ const Login: React.FC = () => {
         toast({
           variant: "destructive",
           title: "Erro ao alterar senha",
-          description: result.message || "Não foi possível alterar sua senha.",
+          description: "Não foi possível alterar sua senha.",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         variant: "destructive",
         title: "Erro ao alterar senha",
@@ -177,7 +253,9 @@ const Login: React.FC = () => {
           {showChangePassword ? (
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div className="text-center mb-4">
-                <p className="text-gray-600">Você está usando uma senha temporária. Por favor, crie uma nova senha para continuar.</p>
+                <p className="text-gray-600">
+                  Você está usando uma senha temporária. Por favor, crie uma nova senha para continuar.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-password">Nova Senha</Label>
@@ -230,7 +308,7 @@ const Login: React.FC = () => {
                       <Button
                         variant="link"
                         type="button"
-                        onClick={() => setIsResetPasswordModalOpen(true)} // <-- ABRIR MODAL
+                        onClick={handleSendResetCode}
                         className="p-0 h-auto text-primary font-normal text-sm"
                       >
                         Esqueceu sua senha?
@@ -256,20 +334,23 @@ const Login: React.FC = () => {
                     <Label htmlFor="fullName">Nome Completo</Label>
                     <Input
                       id="fullName"
+                      type="text"
                       placeholder="Seu nome completo"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
+                      className="bg-blue-50"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email-register">E-mail</Label>
+                    <Label htmlFor="register-email">E-mail</Label>
                     <Input
-                      id="email-register"
+                      id="register-email"
                       type="email"
                       placeholder="seuemail@exemplo.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      className="bg-blue-50"
                       required
                     />
                   </div>
@@ -277,10 +358,10 @@ const Login: React.FC = () => {
                     <Label htmlFor="whatsapp">WhatsApp</Label>
                     <FormattedInput
                       id="whatsapp"
-                      mask="phone"
+                      placeholder="(11) 99999-9999"
                       value={whatsapp}
-                      onChange={(value) => setWhatsapp(value)}
-                      placeholder="(00) 00000-0000"
+                      onChange={(e: any) => setWhatsapp(e.target.value)}
+                      className="bg-blue-50"
                       required
                     />
                   </div>
@@ -288,9 +369,11 @@ const Login: React.FC = () => {
                     <Label htmlFor="companyName">Nome da Empresa</Label>
                     <Input
                       id="companyName"
+                      type="text"
                       placeholder="Nome da sua empresa"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
+                      className="bg-blue-50"
                       required
                     />
                   </div>
@@ -298,32 +381,34 @@ const Login: React.FC = () => {
                     <Label htmlFor="cnpj">CNPJ</Label>
                     <FormattedInput
                       id="cnpj"
-                      mask="cnpj"
-                      value={cnpj}
-                      onChange={(value) => setCnpj(value)}
                       placeholder="00.000.000/0000-00"
+                      value={cnpj}
+                      onChange={(e: any) => setCnpj(e.target.value)}
+                      className="bg-blue-50"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password-register">Senha</Label>
+                    <Label htmlFor="register-password">Senha</Label>
                     <Input
-                      id="password-register"
+                      id="register-password"
                       type="password"
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      className="bg-blue-50"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirmar Senha</Label>
+                    <Label htmlFor="register-confirm-password">Confirmar Senha</Label>
                     <Input
-                      id="confirm-password"
+                      id="register-confirm-password"
                       type="password"
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="bg-blue-50"
                       required
                     />
                   </div>

@@ -87,7 +87,6 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ isOpen, onClose
     }
 
     try {
-      // Gerar o código antes de enviar
       const generatedCode = generateCode();
       setSentCode(generatedCode);
       
@@ -138,9 +137,6 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ isOpen, onClose
     try {
       // Simular verificação do código
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Código digitado:', code);
-      console.log('Código esperado:', sentCode);
       
       if (code === sentCode) {
         setIsTimerActive(false);
