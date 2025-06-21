@@ -13,14 +13,14 @@ const MainLayout: React.FC = () => {
   const isMobile = useIsMobile();
   
   // Verificar se o usuário está autenticado
-  const currentUser = authService.getCurrentUser();
+  // const currentUser = authService.getCurrentUser();
   
-  if (!currentUser) {
-    return <Navigate to="/login" />;
-  }
+  // if (!currentUser) {
+  //   return <Navigate to="/login" />;
+  // }
 
   // Verificar se o usuário é admin para determinar acesso à página de funcionários
-  const isAdmin = currentUser.isAdmin;
+  // const isAdmin = currentUser.isAdmin;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -36,7 +36,8 @@ const MainLayout: React.FC = () => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0 transition-transform duration-300 ease-in-out z-30 md:relative md:z-0`}
       >
-        <Sidebar isAdmin={isAdmin} />
+        {/* isAdmin={isAdmin} */}
+        <Sidebar  />
       </div>
       
       <div className="flex-1 md:ml-16 flex flex-col">
